@@ -1,4 +1,5 @@
-Source code for swarm agents with benchmarks will be supplied as soon as the experiments have been performed. Enjoy the view in the meantime.
+Source code for swarm agents with benchmarks will be supplied as soon as the experiments have been performed.
+Enjoy the view in the meantime.
 
 
                       /^--^\     /^--^\     /^--^\
