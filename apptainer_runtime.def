@@ -1,0 +1,25 @@
+Bootstrap: docker
+From: nvcr.io/nvidia/pytorch:24.07-py3
+
+%post
+    pip install --no-cache-dir \
+        transformers==4.57.6 \
+        datasets==3.2.0 \
+        accelerate==1.7.0 \
+        peft==0.14.0 \
+        trl==0.13.0 \
+        bitsandbytes==0.45.0 \
+        wandb==0.19.0 \
+        mistral-common \
+        scipy \
+        llmcompressor \
+        rouge-score \
+        bert-score
+
+%environment
+    export HF_HUB_OFFLINE=1
+    export TRANSFORMERS_OFFLINE=1
+    export WANDB_MODE=offline
+
+%runscript
+    exec python "$@"
