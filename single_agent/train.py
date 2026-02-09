@@ -42,10 +42,10 @@ torch.cuda.set_device(local_rank)
 device_map = {"": local_rank}   # or {"": torch.cuda.current_device()}
 
 # Configure WandB logging
-if not acc.is_main_process:
+# if not acc.is_main_process:
     # absolutely prevent rank>0 from creating a run
-    os.environ["WANDB_DISABLED"] = "true"
-    os.environ["WANDB_MODE"] = "disabled"
+    # os.environ["WANDB_DISABLED"] = "true"
+    # os.environ["WANDB_MODE"] = "disabled"
 
 # Register missing ministral3 text config
 CONFIG_MAPPING_NAMES["ministral3"] = "MistralConfig"
@@ -121,8 +121,8 @@ MAX_SEQ_LENGTH = 4096
 dataset = load_dataset(
     "json",
     data_files={
-        "train": os.path.join(DATA_DIR, "training/training_single.jsonl"),
-        "validation": os.path.join(DATA_DIR, "validation/validation_single.jsonl"),
+        "training": os.path.join(DATA_DIR, "training_single.jsonl"),
+        "validation": os.path.join(DATA_DIR, "validation_single.jsonl"),
     },
 )
 
@@ -133,7 +133,7 @@ def preprocess(examples):
     tokenized = tokenizer(texts, truncation=True, max_length=MAX_SEQ_LENGTH, padding=False)
     return tokenized
 
-dataset = dataset.map(preprocess, batched=True, remove_columns=dataset["train"].column_names)
+dataset = dataset.map(preprocess, batched=True, remove_columns=dataset["training"].column_names)
 
 # Training config
 data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=False)
@@ -169,7 +169,7 @@ training_args = SFTConfig(
 trainer = SFTTrainer(
     model=model,
     args=training_args,
-    train_dataset=dataset["train"],
+    train_dataset=dataset["training"],
     eval_dataset=dataset["validation"],
     data_collator=data_collator,
     processing_class=tokenizer,

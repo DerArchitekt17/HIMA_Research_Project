@@ -186,7 +186,7 @@ Benchmark evaluation on 500 validation samples. All scores are F1.
    ./build_apptainer_image.sh
    ```
 
-3. **Login to Weights & Biases**
+3. **Login to Weights & Biases (Optional)**
    ```bash
    wandb login
    ```
@@ -211,6 +211,11 @@ sbatch single_agent/run_training.slurm
 
 # Multi-agent (trains all 4 agents in two parallel batches)
 sbatch multi_agents/run_training.slurm
+```
+
+(Optional) after training, sync WandB runs to your online account:
+```bash
+wandb sync --include-offline wandb/wandb/offline-run-*
 ```
 
 ### Benchmarking
