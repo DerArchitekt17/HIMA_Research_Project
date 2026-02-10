@@ -90,7 +90,7 @@ def extract_dialogue(user_message: str) -> str:
 
 # Loading uniform benchmark data
 print("Loading single-LLM validation data ...")
-multi_agent_benchmark = load_jsonl(os.path.join(DATA_DIR, "benchmark_multi_agent.jsonl"))
+multi_agent_benchmark = load_jsonl(os.path.join(DATA_DIR, "benchmark_multi_agents.jsonl"))
 print(f"Loaded {len(multi_agent_benchmark)} single-LLM records")
 
 single_llm_refs = {}

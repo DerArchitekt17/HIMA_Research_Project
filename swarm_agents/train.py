@@ -20,12 +20,7 @@ import argparse
 import glob
 import torch
 from datasets import load_dataset
-from transformers import (
-    AutoModelForCausalLM,
-    AutoTokenizer,
-    BitsAndBytesConfig,
-    DataCollatorForLanguageModeling,
-)
+from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig, DataCollatorForLanguageModeling
 from transformers.models.mistral.configuration_mistral import MistralConfig
 from transformers.models.auto.configuration_auto import CONFIG_MAPPING_NAMES, CONFIG_MAPPING
 from transformers.models.auto.modeling_auto import MODEL_FOR_CAUSAL_LM_MAPPING
@@ -173,15 +168,14 @@ training_args = SFTConfig(
     save_strategy="steps",
     save_steps=100,
     save_total_limit=3,
-    load_best_model_at_end=True,
-    metric_for_best_model="eval_loss",
+    load_best_model_at_end=False,
     report_to="wandb" if IS_MAIN_PROCESS else "none",
     max_seq_length=MAX_SEQ_LENGTH,
     gradient_checkpointing=True,
     gradient_checkpointing_kwargs={"use_reentrant": False},
     remove_unused_columns=False,
     dataset_kwargs={"skip_prepare_dataset": True},
-    ddp_find_unused_parameters=False,
+    ddp_find_unused_parameters=True,
 )
 
 # Trainer
