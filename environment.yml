@@ -1,4 +1,4 @@
-name: a1
+name: hima_research
 channels:
   - huggingface
   - conda-forge
