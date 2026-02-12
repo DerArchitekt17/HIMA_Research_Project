@@ -61,20 +61,17 @@ BASE_DIR = os.getenv("SLURM_SUBMIT_DIR", ".")
 MODEL_DIR = os.path.join(BASE_DIR, "basemodel")
 DATA_DIR = os.path.join(BASE_DIR, "data")
 OUTPUT_DIR = os.path.join(BASE_DIR, "finetuned_models", agent, role)
-WANDB_DIR = os.path.join(BASE_DIR, "wandb")
 
 os.makedirs(OUTPUT_DIR, exist_ok=True)
-os.makedirs(WANDB_DIR, exist_ok=True)
 
 # Ensure online functions are configured as offline services (reinforcement)
 os.environ["HF_HUB_OFFLINE"] = "1"
 os.environ["TRANSFORMERS_OFFLINE"] = "1"
 os.environ["WANDB_MODE"] = "offline"
-os.environ["WANDB_DIR"] = WANDB_DIR
 
 # Only initialize wandb on main process to avoid duplicate logging
 if IS_MAIN_PROCESS:
-    wandb.init(project=os.getenv("WANDB_PROJECT", ""), name=os.getenv("WANDB_NAME", ""), dir=WANDB_DIR)
+    wandb.init(project=os.getenv("WANDB_PROJECT", ""), name=os.getenv("WANDB_NAME", ""), dir=BASE_DIR)
 
 # Loading tokenizer
 tokenizer = AutoTokenizer.from_pretrained(
@@ -92,7 +89,7 @@ bnb_config = BitsAndBytesConfig(
     bnb_4bit_use_double_quant=True,
 )
 
-# Loading model — each process loads onto its assigned GPU via LOCAL_RANK
+# Loading model for each process loads onto its assigned GPU via LOCAL_RANK
 model = AutoModelForCausalLM.from_pretrained(
     MODEL_DIR,
     quantization_config=bnb_config,
@@ -206,3 +203,4 @@ tokenizer.save_pretrained(os.path.join(OUTPUT_DIR, "final_adapter"))
 if IS_MAIN_PROCESS:
     wandb.finish()
     print(f"Training complete for {role}/{agent}. Adapter saved to {os.path.join(OUTPUT_DIR, 'final_adapter')}")
+

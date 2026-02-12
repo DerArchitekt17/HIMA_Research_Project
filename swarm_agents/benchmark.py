@@ -161,7 +161,7 @@ for i in range(num_records):
         "ref_combined": ref_combined,
     })
 
-print(f"Matched {len(dataset)} records ({skipped} skipped — no single-LLM match)")
+print(f"Matched {len(dataset)} records ({skipped} skipped - no single-LLM match)")
 
 if args.num_samples > 0:
     dataset = dataset[:args.num_samples]
@@ -169,7 +169,7 @@ if args.num_samples > 0:
 
 
 # ---------------------------------------------------------------------------
-# Worker function — runs on a single GPU
+# Worker function - runs on a single GPU
 # ---------------------------------------------------------------------------
 
 def worker(gpu_id: int, samples: list[dict], max_new_tokens: int,
@@ -341,14 +341,14 @@ def worker(gpu_id: int, samples: list[dict], max_new_tokens: int,
     total_time = sum(sample_times) if sample_times else 0
     avg_time = sum(sample_times) / len(sample_times) if sample_times else 0
     print(
-        f"[GPU {gpu_id}] Done — processed {len(samples)} samples in "
+        f"[GPU {gpu_id}] Done - processed {len(samples)} samples in "
         f"{total_time / 3600:.2f}h (avg {avg_time:.1f}s/sample)",
         flush=True,
     )
 
 
 # ---------------------------------------------------------------------------
-# BERTScore worker — runs on a single GPU, processes assigned scoring tasks
+# BERTScore worker - runs on a single GPU, processes assigned scoring tasks
 # ---------------------------------------------------------------------------
 
 def bertscore_worker(gpu_id: int, tasks: list[dict], model_dir: str,
@@ -496,7 +496,7 @@ def main():
             for k, v in scores.items()
         }
 
-    # BERTScore — parallel across all available GPUs
+    # BERTScore - parallel across all available GPUs
     print("\nComputing BERTScore ...")
     print(f"Using local model: {BERTSCORE_MODEL_DIR}")
 
@@ -605,11 +605,11 @@ def main():
         return sum(key_fn(r) for r in results) / n
 
     print(f"\n{'=' * 90}")
-    print(f"BENCHMARK RESULTS — SWARM DCR ({n} samples)")
+    print(f"BENCHMARK RESULTS - SWARM DCR ({n} samples)")
     print(f"{'=' * 90}")
 
     for dim in DIMENSIONS:
-        print(f"\n  {dim.upper()} — Refiner (final)")
+        print(f"\n  {dim.upper()} - Refiner (final)")
         print(f"    ROUGE-1:    P={avg(lambda r: r['rouge_per_dim'][dim]['rouge1']['precision']):.4f}  "
               f"R={avg(lambda r: r['rouge_per_dim'][dim]['rouge1']['recall']):.4f}  "
               f"F1={avg(lambda r: r['rouge_per_dim'][dim]['rouge1']['fmeasure']):.4f}")
@@ -623,7 +623,7 @@ def main():
               f"R={avg(lambda r: r['bertscore_per_dim'][dim]['recall']):.4f}  "
               f"F1={avg(lambda r: r['bertscore_per_dim'][dim]['f1']):.4f}")
 
-        print(f"  {dim.upper()} — Drafter (ablation)")
+        print(f"  {dim.upper()} - Drafter (ablation)")
         print(f"    ROUGE-1:    P={avg(lambda r: r['rouge_per_dim_drafter'][dim]['rouge1']['precision']):.4f}  "
               f"R={avg(lambda r: r['rouge_per_dim_drafter'][dim]['rouge1']['recall']):.4f}  "
               f"F1={avg(lambda r: r['rouge_per_dim_drafter'][dim]['rouge1']['fmeasure']):.4f}")
@@ -749,3 +749,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

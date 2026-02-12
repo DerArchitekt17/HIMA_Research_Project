@@ -53,10 +53,8 @@ BASE_DIR = os.getenv("SLURM_SUBMIT_DIR", ".")
 MODEL_DIR = os.path.join(BASE_DIR, "basemodel")
 DATA_DIR = os.path.join(BASE_DIR, "data")
 OUTPUT_DIR = os.path.join(BASE_DIR, "finetuned_models", agent)
-WANDB_DIR = os.path.join(BASE_DIR, "wandb")
 
 os.makedirs(OUTPUT_DIR, exist_ok=True)
-os.makedirs(WANDB_DIR, exist_ok=True)
 
 # Patch config.json if model_type is missing (required by AutoConfig dispatch)
 import json
@@ -73,9 +71,8 @@ if "model_type" not in config_data:
 os.environ["HF_HUB_OFFLINE"] = "1"
 os.environ["TRANSFORMERS_OFFLINE"] = "1"
 os.environ["WANDB_MODE"] = "offline"
-os.environ["WANDB_DIR"] = WANDB_DIR
 
-wandb.init(project=os.getenv("WANDB_PROJECT", ""), name=os.getenv("WANDB_NAME", ""), dir=WANDB_DIR)
+wandb.init(project=os.getenv("WANDB_PROJECT", ""), name=os.getenv("WANDB_NAME", ""), dir=BASE_DIR)
 
 # Loading tokenizer
 tokenizer = AutoTokenizer.from_pretrained(

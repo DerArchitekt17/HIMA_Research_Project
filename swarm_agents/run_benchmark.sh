@@ -1,27 +1,12 @@
 #!/bin/bash
-#SBATCH --job-name=hima_swarm_benchmark
-#SBATCH --partition=gpu
-#SBATCH --gres=gpu:a100_40gb:3
-#SBATCH --ntasks=1
-#SBATCH --cpus-per-task=32
-#SBATCH --mem=256G
-#SBATCH --time=72:00:00
-#SBATCH --output=logs/%j.out
-#SBATCH --error=logs/%j.err
-
 # Setting environment variables
 NUMBER_OF_SAMPLES=500   # set to 0 to run all samples
-BASE_DIR="${SLURM_SUBMIT_DIR}"
-SIF="../apptainer_runtime.sif"
+BASE_DIR="$(pwd)"
 SCRIPT=${BASE_DIR}/benchmark.py
-BENCHMARK_OUTPUT_FOLDER=${BASE_DIR}/benchmark_results
+BENCHMARK_OUTPUT_FOLDER="/benchmark_results"
 
 # Create directories
-mkdir -p ${BASE_DIR}/logs ${BENCHMARK_OUTPUT_FOLDER}
-
-# Configure online services for offline use
-export HF_HUB_OFFLINE=1
-export TRANSFORMERS_OFFLINE=1
+mkdir -p ${BASE_DIR}/${BENCHMARK_OUTPUT_FOLDER}
 
 # Args processing
 NUM_SAMPLES_ARG=""

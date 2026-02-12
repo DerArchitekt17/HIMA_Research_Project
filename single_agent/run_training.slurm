@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=hima_single_finetune
 #SBATCH --partition=gpu
-#SBATCH --gres=gpu:a100_40gb:2
+#SBATCH --gres=gpu:a100_40gb:3
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=32
 #SBATCH --mem=128G

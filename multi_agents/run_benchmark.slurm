@@ -19,10 +19,6 @@ BENCHMARK_OUTPUT_FOLDER="/benchmark_results"
 # Create directories
 mkdir -p ${BASE_DIR}/logs ${BASE_DIR}/${BENCHMARK_OUTPUT_FOLDER}
 
-# Configure online services for offline use
-export HF_HUB_OFFLINE=1
-export TRANSFORMERS_OFFLINE=1
-
 # Args processing
 NUM_SAMPLES_ARG=""
 if [ ${NUMBER_OF_SAMPLES} -ge 1 ]; then
