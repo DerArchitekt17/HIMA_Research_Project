@@ -5,7 +5,7 @@
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=32
 #SBATCH --mem=256G
-#SBATCH --time=16:00:00
+#SBATCH --time=48:00:00
 #SBATCH --output=logs/%j.out
 #SBATCH --error=logs/%j.err
 
@@ -14,7 +14,7 @@ NUMBER_OF_SAMPLES=500   # set to 0 to run all samples
 BASE_DIR="${SLURM_SUBMIT_DIR}"
 SIF="../apptainer_runtime.sif"
 SCRIPT=${BASE_DIR}/benchmark.py
-BENCHMARK_OUTPUT_FOLDER=${BASE_DIR}"/benchmark_results"
+BENCHMARK_OUTPUT_FOLDER="/benchmark_results"
 
 # Create directories
 mkdir -p ${BASE_DIR}/logs ${BASE_DIR}/${BENCHMARK_OUTPUT_FOLDER}

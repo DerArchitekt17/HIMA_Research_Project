@@ -58,6 +58,17 @@ WANDB_DIR = os.path.join(BASE_DIR, "wandb")
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 os.makedirs(WANDB_DIR, exist_ok=True)
 
+# Patch config.json if model_type is missing (required by AutoConfig dispatch)
+import json
+config_path = os.path.join(MODEL_DIR, "config.json")
+with open(config_path, "r") as f:
+    config_data = json.load(f)
+if "model_type" not in config_data:
+    config_data["model_type"] = "ministral3"
+    with open(config_path, "w") as f:
+        json.dump(config_data, f, indent=2)
+    print(f"Patched {config_path}: added model_type='ministral3'")
+
 # Ensure online functions are configured as offline services (reinforcement)
 os.environ["HF_HUB_OFFLINE"] = "1"
 os.environ["TRANSFORMERS_OFFLINE"] = "1"

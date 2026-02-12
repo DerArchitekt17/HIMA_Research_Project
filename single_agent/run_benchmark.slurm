@@ -1,11 +1,11 @@
 #!/bin/bash
 #SBATCH --job-name=hima_single_benchmark
 #SBATCH --partition=gpu
-#SBATCH --gres=gpu:a100_40gb:2
+#SBATCH --gres=gpu:a100_40gb:3
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=16
-#SBATCH --mem=64G
-#SBATCH --time=14:00:00
+#SBATCH --mem=128G
+#SBATCH --time=48:00:00
 #SBATCH --output=logs/%j.out
 #SBATCH --error=logs/%j.err
 
@@ -14,7 +14,7 @@ NUMBER_OF_SAMPLES=500   # set to 0 to run all samples
 BASE_DIR="${SLURM_SUBMIT_DIR}"
 SIF="../apptainer_runtime.sif"
 SCRIPT=${BASE_DIR}/benchmark.py
-BENCHMARK_OUTPUT_FOLDER=${BASE_DIR}"/benchmark_results"
+BENCHMARK_OUTPUT_FOLDER="/benchmark_results"
 
 # Create directories
 mkdir -p ${BASE_DIR}/logs ${BASE_DIR}/${BENCHMARK_OUTPUT_FOLDER}

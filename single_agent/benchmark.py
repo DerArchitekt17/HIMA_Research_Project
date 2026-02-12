@@ -188,7 +188,33 @@ def worker(gpu_id: int, samples: list[dict], max_new_tokens: int,
           f"(avg {avg_time:.1f}s/sample)", flush=True)
 
 
+def bertscore_worker(gpu_id: int, tasks: list[dict], model_dir: str,
+                     result_queue: mp.Queue):
+    """Compute BERTScore for assigned tasks on a single GPU."""
+    device = f"cuda:{gpu_id}"
+    print(f"[GPU {gpu_id}] BERTScore worker starting with {len(tasks)} task(s)...",
+          flush=True)
+
+    for task in tasks:
+        label = task["label"]
+        print(f"  [GPU {gpu_id}] {label} ({len(task['cands'])} samples)...", flush=True)
+        P, R, F1 = bert_score(
+            task["cands"], task["refs"], model_type=model_dir,
+            num_layers=17, verbose=False, device=device,
+        )
+        result_queue.put({
+            "label": label,
+            "P": P.tolist(),
+            "R": R.tolist(),
+            "F1": F1.tolist(),
+        })
+        torch.cuda.empty_cache()
+
+    print(f"[GPU {gpu_id}] BERTScore worker done.", flush=True)
+
+
 def main():
+    mp.set_start_method("spawn", force=True)
     # Enabling multi GPU processing
     num_gpus = torch.cuda.device_count()
     print(f"\nUsing {num_gpus} GPU(s) for inference on {len(dataset)} samples ...")
@@ -202,7 +228,6 @@ def main():
         s["_total"] = len(dataset)
 
     if num_gpus >= 2:
-        mp.set_start_method("spawn", force=True)
         result_queue = mp.Queue()
         # Round-robin split across available GPUs
         shards = [[] for _ in range(num_gpus)]
@@ -269,37 +294,65 @@ def main():
             for k, v in scores.items()
         }
 
-    # Computing BERTScore (on GPU) - batched to avoid memory explosion
-    print("Computing BERTScore ...")
-    bertscore_device = "cuda:0" if torch.cuda.is_available() else "cpu"
-    print(f"Using {bertscore_device} for BERTScore computation")
+    # BERTScore — parallel across all available GPUs
+    print("\nComputing BERTScore ...")
     print(f"Using local model: {BERTSCORE_MODEL_DIR}")
 
-    # Process in batches to avoid O(n*L^2) memory growth
-    # A100 40GB: use 4, B200/H100 80GB+: can use 8-16
-    BERTSCORE_BATCH_SIZE = 4
-    all_P, all_R, all_F1 = [], [], []
+    all_cands = [r["output"] for r in results]
+    all_refs = [r["reference"] for r in results]
 
-    for batch_start in range(0, len(results), BERTSCORE_BATCH_SIZE):
-        batch_end = min(batch_start + BERTSCORE_BATCH_SIZE, len(results))
-        batch_results = results[batch_start:batch_end]
+    if num_gpus >= 2:
+        # Shard samples across GPUs (single task, split by samples)
+        print(f"Distributing {len(results)} samples across {num_gpus} GPUs for BERTScore ...")
+        shard_size = (len(results) + num_gpus - 1) // num_gpus
+        bs_tasks = []
+        for gpu_id in range(num_gpus):
+            start = gpu_id * shard_size
+            end = min(start + shard_size, len(results))
+            if start >= len(results):
+                break
+            bs_tasks.append({
+                "label": f"shard_{gpu_id}",
+                "cands": all_cands[start:end],
+                "refs": all_refs[start:end],
+            })
 
-        refs = [r["reference"] for r in batch_results]
-        cands = [r["output"] for r in batch_results]
+        bs_queue = mp.Queue()
+        bs_processes = []
+        for gpu_id, task in enumerate(bs_tasks):
+            p = mp.Process(
+                target=bertscore_worker,
+                args=(gpu_id, [task], BERTSCORE_MODEL_DIR, bs_queue),
+            )
+            p.start()
+            bs_processes.append(p)
 
-        print(f"  BERTScore batch {batch_start//BERTSCORE_BATCH_SIZE + 1}/"
-              f"{(len(results) + BERTSCORE_BATCH_SIZE - 1)//BERTSCORE_BATCH_SIZE} "
-              f"(samples {batch_start+1}-{batch_end})")
+        # Collect results and reassemble in order
+        bs_results = {}
+        for _ in range(len(bs_tasks)):
+            res = bs_queue.get(timeout=600)
+            bs_results[res["label"]] = res
 
-        P, R, F1 = bert_score(cands, refs, model_type=BERTSCORE_MODEL_DIR,
-                              num_layers=17, verbose=False, device=bertscore_device)
-        all_P.extend(P.tolist())
-        all_R.extend(R.tolist())
-        all_F1.extend(F1.tolist())
+        for p in bs_processes:
+            p.join(timeout=10)
 
-        # Clear CUDA cache between batches to prevent fragmentation
-        if torch.cuda.is_available():
-            torch.cuda.empty_cache()
+        # Merge shards back in GPU order
+        all_P, all_R, all_F1 = [], [], []
+        for gpu_id in range(len(bs_tasks)):
+            bs = bs_results[f"shard_{gpu_id}"]
+            all_P.extend(bs["P"])
+            all_R.extend(bs["R"])
+            all_F1.extend(bs["F1"])
+    else:
+        # Single GPU fallback
+        print("Using cuda:0 for BERTScore computation")
+        P, R, F1 = bert_score(
+            all_cands, all_refs, model_type=BERTSCORE_MODEL_DIR,
+            num_layers=17, verbose=True, device="cuda:0",
+        )
+        all_P = P.tolist()
+        all_R = R.tolist()
+        all_F1 = F1.tolist()
 
     for i, res in enumerate(results):
         res["bertscore"] = {
