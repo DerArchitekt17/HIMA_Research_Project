@@ -3,10 +3,10 @@
 NUMBER_OF_SAMPLES=500   # set to 0 to run all samples
 BASE_DIR="$(pwd)"
 SCRIPT=${BASE_DIR}/benchmark.py
-BENCHMARK_OUTPUT_FOLDER="/benchmark_results"
+BENCHMARK_OUTPUT_FOLDER=${BASE_DIR}/benchmark_results
 
 # Create directory
-mkdir -p ${BASE_DIR}/${BENCHMARK_OUTPUT_FOLDER}
+mkdir -p ${BENCHMARK_OUTPUT_FOLDER}
 
 # Args processing
 NUM_SAMPLES_ARG=""

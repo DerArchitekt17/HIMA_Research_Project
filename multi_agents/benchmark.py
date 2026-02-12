@@ -26,7 +26,6 @@ import argparse
 import time
 import torch
 import torch.multiprocessing as mp
-from tqdm import tqdm
 from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
 from transformers.models.mistral.configuration_mistral import MistralConfig
 from transformers.models.auto.configuration_auto import CONFIG_MAPPING_NAMES, CONFIG_MAPPING
@@ -37,7 +36,8 @@ from peft import PeftModel
 from rouge_score import rouge_scorer
 
 from bert_score import score as bert_score
-BERTSCORE_MODEL_DIR = os.path.join(os.getenv("SLURM_SUBMIT_DIR", "."), "bertscore_model")
+# Must be absolute path - relative paths like ./bertscore_model are rejected as invalid repo IDs
+BERTSCORE_MODEL_DIR = os.path.abspath(os.path.join(os.getenv("SLURM_SUBMIT_DIR", "."), "bertscore_model"))
 
 # Register missing ministral3 text config
 CONFIG_MAPPING_NAMES["ministral3"] = "MistralConfig"
@@ -354,7 +354,6 @@ def main():
         return
     print(f"Total inference time: {inference_elapsed/3600:.2f}h ({inference_elapsed/len(results):.1f}s/sample avg)")
 
-# Computing metrics
     # Computing ROUGE scores
     print("\nComputing ROUGE scores ...")
     scorer = rouge_scorer.RougeScorer(["rouge1", "rouge2", "rougeL"], use_stemmer=True)
@@ -455,8 +454,6 @@ def main():
             "recall": bs["R"][i],
             "f1": bs["F1"][i],
         }
-    bertscore_computed = True
-
     # Result aggregation and summary terminal output
     n = len(results)
 
@@ -478,10 +475,9 @@ def main():
         print(f"    ROUGE-L:    P={avg(lambda r: r['rouge_per_agent'][agent]['rougeL']['precision']):.4f}  "
               f"R={avg(lambda r: r['rouge_per_agent'][agent]['rougeL']['recall']):.4f}  "
               f"F1={avg(lambda r: r['rouge_per_agent'][agent]['rougeL']['fmeasure']):.4f}")
-        if bertscore_computed:
-            print(f"    BERTScore:  P={avg(lambda r: r['bertscore_per_agent'][agent]['precision']):.4f}  "
-                  f"R={avg(lambda r: r['bertscore_per_agent'][agent]['recall']):.4f}  "
-                  f"F1={avg(lambda r: r['bertscore_per_agent'][agent]['f1']):.4f}")
+        print(f"    BERTScore:  P={avg(lambda r: r['bertscore_per_agent'][agent]['precision']):.4f}  "
+              f"R={avg(lambda r: r['bertscore_per_agent'][agent]['recall']):.4f}  "
+              f"F1={avg(lambda r: r['bertscore_per_agent'][agent]['f1']):.4f}")
 
     print(f"\n  COMBINED")
     print(f"    ROUGE-1:    P={avg(lambda r: r['rouge_combined']['rouge1']['precision']):.4f}  "
@@ -493,10 +489,9 @@ def main():
     print(f"    ROUGE-L:    P={avg(lambda r: r['rouge_combined']['rougeL']['precision']):.4f}  "
           f"R={avg(lambda r: r['rouge_combined']['rougeL']['recall']):.4f}  "
           f"F1={avg(lambda r: r['rouge_combined']['rougeL']['fmeasure']):.4f}")
-    if bertscore_computed:
-        print(f"    BERTScore:  P={avg(lambda r: r['bertscore_combined']['precision']):.4f}  "
-              f"R={avg(lambda r: r['bertscore_combined']['recall']):.4f}  "
-              f"F1={avg(lambda r: r['bertscore_combined']['f1']):.4f}")
+    print(f"    BERTScore:  P={avg(lambda r: r['bertscore_combined']['precision']):.4f}  "
+          f"R={avg(lambda r: r['bertscore_combined']['recall']):.4f}  "
+          f"F1={avg(lambda r: r['bertscore_combined']['f1']):.4f}")
 
     print(f"\n{'='*90}")
 
@@ -524,12 +519,11 @@ def main():
             },
         },
     }
-    if bertscore_computed:
-        summary["combined"]["bertscore"] = {
-            "precision": avg(lambda r: r["bertscore_combined"]["precision"]),
-            "recall": avg(lambda r: r["bertscore_combined"]["recall"]),
-            "f1": avg(lambda r: r["bertscore_combined"]["f1"]),
-        }
+    summary["combined"]["bertscore"] = {
+        "precision": avg(lambda r: r["bertscore_combined"]["precision"]),
+        "recall": avg(lambda r: r["bertscore_combined"]["recall"]),
+        "f1": avg(lambda r: r["bertscore_combined"]["f1"]),
+    }
     for agent in AGENTS:
         summary["per_agent"][agent] = {
             "rouge1": {
@@ -548,12 +542,11 @@ def main():
                 "f1": avg(lambda r, a=agent: r["rouge_per_agent"][a]["rougeL"]["fmeasure"]),
             },
         }
-        if bertscore_computed:
-            summary["per_agent"][agent]["bertscore"] = {
-                "precision": avg(lambda r, a=agent: r["bertscore_per_agent"][a]["precision"]),
-                "recall": avg(lambda r, a=agent: r["bertscore_per_agent"][a]["recall"]),
-                "f1": avg(lambda r, a=agent: r["bertscore_per_agent"][a]["f1"]),
-            }
+        summary["per_agent"][agent]["bertscore"] = {
+            "precision": avg(lambda r, a=agent: r["bertscore_per_agent"][a]["precision"]),
+            "recall": avg(lambda r, a=agent: r["bertscore_per_agent"][a]["recall"]),
+            "f1": avg(lambda r, a=agent: r["bertscore_per_agent"][a]["f1"]),
+        }
 
     output_data = {
         "summary": summary,

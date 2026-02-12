@@ -31,21 +31,15 @@ from transformers.models.mistral3.configuration_mistral3 import Mistral3Config
 from transformers.models.mistral3.modeling_mistral3 import Mistral3ForConditionalGeneration
 from peft import LoraConfig, prepare_model_for_kbit_training, get_peft_model
 from trl import SFTTrainer, SFTConfig
-from accelerate import Accelerator
 import wandb
 
-acc = Accelerator()
+# Distributed training setup (set by accelerate launch)
+LOCAL_RANK = int(os.environ.get("LOCAL_RANK", 0))
+WORLD_SIZE = int(os.environ.get("WORLD_SIZE", 1))
+IS_MAIN_PROCESS = LOCAL_RANK == 0
 
-# Configure multi GPU use
-local_rank = int(os.environ.get("LOCAL_RANK", 0))
-torch.cuda.set_device(local_rank)
-device_map = {"": local_rank}   # or {"": torch.cuda.current_device()}
-
-# Configure WandB logging
-# if not acc.is_main_process:
-    # absolutely prevent rank>0 from creating a run
-    # os.environ["WANDB_DISABLED"] = "true"
-    # os.environ["WANDB_MODE"] = "disabled"
+if IS_MAIN_PROCESS:
+    print(f"Distributed setup: {WORLD_SIZE} GPU(s) detected")
 
 # Register missing ministral3 text config
 CONFIG_MAPPING_NAMES["ministral3"] = "MistralConfig"
@@ -65,7 +59,9 @@ os.environ["HF_HUB_OFFLINE"] = "1"
 os.environ["TRANSFORMERS_OFFLINE"] = "1"
 os.environ["WANDB_MODE"] = "offline"
 
-wandb.init(project=os.getenv("WANDB_PROJECT", ""), name=os.getenv("WANDB_NAME", ""), dir=BASE_DIR)
+# Only initialize wandb on main process to avoid duplicate logging
+if IS_MAIN_PROCESS:
+    wandb.init(project=os.getenv("WANDB_PROJECT", ""), name=os.getenv("WANDB_NAME", ""), dir=BASE_DIR)
 
 # Loading tokenizer
 tokenizer = AutoTokenizer.from_pretrained(
@@ -83,21 +79,17 @@ bnb_config = BitsAndBytesConfig(
     bnb_4bit_use_double_quant=True,
 )
 
-# Loading model - device_map="auto" distributes across all available GPUs
+# Loading model — each process loads onto its assigned GPU via LOCAL_RANK
 model = AutoModelForCausalLM.from_pretrained(
     MODEL_DIR,
     quantization_config=bnb_config,
-    device_map=device_map,
+    device_map={"": LOCAL_RANK},
     torch_dtype=torch.bfloat16,
     local_files_only=True,
     trust_remote_code=True,
     attn_implementation="flash_attention_2",
 )
 model = prepare_model_for_kbit_training(model)
-
-# Log GPU distribution
-print(f"Model distributed across devices: {set(model.hf_device_map.values())}")
-print(f"Total GPUs available: {torch.cuda.device_count()}")
 
 # LoRA config
 lora_config = LoraConfig(
@@ -110,7 +102,8 @@ lora_config = LoraConfig(
     task_type="CAUSAL_LM",
 )
 model = get_peft_model(model, lora_config)
-model.print_trainable_parameters()
+if IS_MAIN_PROCESS:
+    model.print_trainable_parameters()
 
 # Loading and preparing dataset
 MAX_SEQ_LENGTH = 4096
@@ -132,15 +125,25 @@ def preprocess(examples):
 
 dataset = dataset.map(preprocess, batched=True, remove_columns=dataset["training"].column_names)
 
+# Dynamic gradient accumulation to keep effective batch size constant
+# Baseline: 2 GPUs x batch 2 x grad_accum 4 = effective batch 16
+PER_DEVICE_BATCH = 2
+TARGET_EFFECTIVE_BATCH = 16
+grad_accum = max(1, TARGET_EFFECTIVE_BATCH // (PER_DEVICE_BATCH * WORLD_SIZE))
+
+if IS_MAIN_PROCESS:
+    effective = PER_DEVICE_BATCH * WORLD_SIZE * grad_accum
+    print(f"Batch config: {PER_DEVICE_BATCH}/device x {WORLD_SIZE} GPUs x {grad_accum} accum = {effective} effective")
+
 # Training config
 data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=False)
 
 training_args = SFTConfig(
     output_dir=OUTPUT_DIR,
     num_train_epochs=3,
-    per_device_train_batch_size=2,
-    per_device_eval_batch_size=2,
-    gradient_accumulation_steps=4,
+    per_device_train_batch_size=PER_DEVICE_BATCH,
+    per_device_eval_batch_size=PER_DEVICE_BATCH,
+    gradient_accumulation_steps=grad_accum,
     learning_rate=2e-4,
     lr_scheduler_type="cosine",
     warmup_ratio=0.05,
@@ -152,14 +155,14 @@ training_args = SFTConfig(
     save_strategy="steps",
     save_steps=100,
     save_total_limit=3,
-    load_best_model_at_end=True,
-    metric_for_best_model="eval_loss",
-    report_to="wandb",
+    load_best_model_at_end=False,
+    report_to="wandb" if IS_MAIN_PROCESS else "none",
     max_seq_length=MAX_SEQ_LENGTH,
     gradient_checkpointing=True,
     gradient_checkpointing_kwargs={"use_reentrant": False},
     remove_unused_columns=False,
     dataset_kwargs={"skip_prepare_dataset": True},
+    ddp_find_unused_parameters=True,
 )
 
 # Trainer
@@ -180,11 +183,13 @@ checkpoints = glob.glob(checkpoint_dir)
 if checkpoints:
     # Find latest checkpoint by step number
     latest = max(checkpoints, key=lambda x: int(x.split("-")[-1]))
-    print(f"Resuming from {latest}")
+    if IS_MAIN_PROCESS:
+        print(f"Resuming from {latest}")
     trainer.train(resume_from_checkpoint=latest)
 else:
     trainer.train()
 trainer.save_model(os.path.join(OUTPUT_DIR, "final_adapter"))
 tokenizer.save_pretrained(os.path.join(OUTPUT_DIR, "final_adapter"))
-wandb.finish()
-print(f"Training complete. Adapter saved to {os.path.join(OUTPUT_DIR, 'final_adapter')}")
+if IS_MAIN_PROCESS:
+    wandb.finish()
+    print(f"Training complete. Adapter saved to {os.path.join(OUTPUT_DIR, 'final_adapter')}")

@@ -48,6 +48,14 @@ parser.add_argument("--agent", type=str, required=True, choices=VALID_AGENTS,
 args = parser.parse_args()
 agent = args.agent
 
+# Distributed training setup (set by accelerate launch)
+LOCAL_RANK = int(os.environ.get("LOCAL_RANK", 0))
+WORLD_SIZE = int(os.environ.get("WORLD_SIZE", 1))
+IS_MAIN_PROCESS = LOCAL_RANK == 0
+
+if IS_MAIN_PROCESS:
+    print(f"Distributed setup: {WORLD_SIZE} GPU(s) detected")
+
 # Set paths and environment variables
 BASE_DIR = os.getenv("SLURM_SUBMIT_DIR", ".")
 MODEL_DIR = os.path.join(BASE_DIR, "basemodel")
@@ -72,7 +80,9 @@ os.environ["HF_HUB_OFFLINE"] = "1"
 os.environ["TRANSFORMERS_OFFLINE"] = "1"
 os.environ["WANDB_MODE"] = "offline"
 
-wandb.init(project=os.getenv("WANDB_PROJECT", ""), name=os.getenv("WANDB_NAME", ""), dir=BASE_DIR)
+# Only initialize wandb on main process to avoid duplicate logging
+if IS_MAIN_PROCESS:
+    wandb.init(project=os.getenv("WANDB_PROJECT", ""), name=os.getenv("WANDB_NAME", ""), dir=BASE_DIR)
 
 # Loading tokenizer
 tokenizer = AutoTokenizer.from_pretrained(
@@ -94,7 +104,7 @@ bnb_config = BitsAndBytesConfig(
 model = AutoModelForCausalLM.from_pretrained(
     MODEL_DIR,
     quantization_config=bnb_config,
-    device_map={"": 0},
+    device_map={"": LOCAL_RANK},
     torch_dtype=torch.bfloat16,
     local_files_only=True,
     trust_remote_code=True,
@@ -113,7 +123,8 @@ lora_config = LoraConfig(
     task_type="CAUSAL_LM",
 )
 model = get_peft_model(model, lora_config)
-model.print_trainable_parameters()
+if IS_MAIN_PROCESS:
+    model.print_trainable_parameters()
 
 # Loading and preparing dataset
 MAX_SEQ_LENGTH = 4096
@@ -135,15 +146,25 @@ def preprocess(examples):
 
 dataset = dataset.map(preprocess, batched=True, remove_columns=dataset["train"].column_names)
 
+# Dynamic gradient accumulation to keep effective batch size constant
+# Baseline: 2 GPUs x batch 2 x grad_accum 4 = effective batch 16
+PER_DEVICE_BATCH = 2
+TARGET_EFFECTIVE_BATCH = 16
+grad_accum = max(1, TARGET_EFFECTIVE_BATCH // (PER_DEVICE_BATCH * WORLD_SIZE))
+
+if IS_MAIN_PROCESS:
+    effective = PER_DEVICE_BATCH * WORLD_SIZE * grad_accum
+    print(f"Batch config: {PER_DEVICE_BATCH}/device x {WORLD_SIZE} GPUs x {grad_accum} accum = {effective} effective")
+
 # Training config
 data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=False)
 
 training_args = SFTConfig(
     output_dir=OUTPUT_DIR,
     num_train_epochs=3,
-    per_device_train_batch_size=2,
-    per_device_eval_batch_size=2,
-    gradient_accumulation_steps=4,
+    per_device_train_batch_size=PER_DEVICE_BATCH,
+    per_device_eval_batch_size=PER_DEVICE_BATCH,
+    gradient_accumulation_steps=grad_accum,
     learning_rate=2e-4,
     lr_scheduler_type="cosine",
     warmup_ratio=0.05,
@@ -155,14 +176,14 @@ training_args = SFTConfig(
     save_strategy="steps",
     save_steps=100,
     save_total_limit=3,
-    load_best_model_at_end=True,
-    metric_for_best_model="eval_loss",
-    report_to="wandb",
+    load_best_model_at_end=False,
+    report_to="wandb" if IS_MAIN_PROCESS else "none",
     max_seq_length=MAX_SEQ_LENGTH,
     gradient_checkpointing=True,
     gradient_checkpointing_kwargs={"use_reentrant": False},
     remove_unused_columns=False,
     dataset_kwargs={"skip_prepare_dataset": True},
+    ddp_find_unused_parameters=True,
 )
 
 # Trainer
@@ -184,11 +205,13 @@ checkpoints = glob.glob(checkpoint_dir)
 if checkpoints:
     # Find latest checkpoint by step number
     latest = max(checkpoints, key=lambda x: int(x.split("-")[-1]))
-    print(f"Resuming from {latest}")
+    if IS_MAIN_PROCESS:
+        print(f"Resuming from {latest}")
     trainer.train(resume_from_checkpoint=latest)
 else:
     trainer.train()
 trainer.save_model(os.path.join(OUTPUT_DIR, "final_adapter"))
 tokenizer.save_pretrained(os.path.join(OUTPUT_DIR, "final_adapter"))
-wandb.finish()
-print(f"Training complete for agent '{agent}'. Adapter saved to {os.path.join(OUTPUT_DIR, 'final_adapter')}")
+if IS_MAIN_PROCESS:
+    wandb.finish()
+    print(f"Training complete for agent '{agent}'. Adapter saved to {os.path.join(OUTPUT_DIR, 'final_adapter')}")

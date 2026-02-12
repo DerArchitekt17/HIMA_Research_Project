@@ -14,10 +14,10 @@ NUMBER_OF_SAMPLES=500   # set to 0 to run all samples
 BASE_DIR="${SLURM_SUBMIT_DIR}"
 SIF="../apptainer_runtime.sif"
 SCRIPT=${BASE_DIR}/benchmark.py
-BENCHMARK_OUTPUT_FOLDER="/benchmark_results"
+BENCHMARK_OUTPUT_FOLDER=${BASE_DIR}/benchmark_results
 
 # Create directories
-mkdir -p ${BASE_DIR}/logs ${BASE_DIR}/${BENCHMARK_OUTPUT_FOLDER}
+mkdir -p ${BASE_DIR}/logs ${BENCHMARK_OUTPUT_FOLDER}
 
 # Args processing
 NUM_SAMPLES_ARG=""
@@ -30,6 +30,6 @@ apptainer exec --nv \
     --bind ${BASE_DIR}:${BASE_DIR} \
     ${SIF} \
     python ${SCRIPT} ${NUM_SAMPLES_ARG} \
-    --output ${BASE_DIR}/${BENCHMARK_OUTPUT_FOLDER}/hima_multi_benchmark_n${NUMBER_OF_SAMPLES}.json
+    --output ${BENCHMARK_OUTPUT_FOLDER}/hima_multi_benchmark_n${NUMBER_OF_SAMPLES}.json
 
 echo "Benchmark complete."

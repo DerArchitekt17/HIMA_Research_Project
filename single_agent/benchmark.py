@@ -282,7 +282,6 @@ def main():
         return
     print(f"Total inference time: {inference_elapsed/3600:.2f}h ({inference_elapsed/len(results):.1f}s/sample avg)")
 
-# Computing metrics
     # Computing ROUGE scores
     print("\nComputing ROUGE scores ...")
     scorer = rouge_scorer.RougeScorer(["rouge1", "rouge2", "rougeL"], use_stemmer=True)
