@@ -288,16 +288,15 @@ The 3B study uses the same data, hyperparameters, and evaluation pipeline as the
 - [Weights & Biases](https://wandb.ai/) account (optional, for experiment tracking)
 - [Hugging Face](https://huggingface.co/) account with access to the Ministral model
 
-> **Choose one of the two setup options below:**
->
-> | | Option 1: SLURM + Apptainer | Option 2: Native |
-> |---|---|---|
-> | **Environment** | HPC cluster with job scheduler | Any Linux machine with GPUs |
-> | **Isolation** | Conda env + Apptainer container | Packages installed directly on system |
-> | **Additional tools** | [Conda](https://docs.conda.io/), [Apptainer](https://apptainer.org/), SLURM | None |
-> | **Run training/benchmarks** | `sbatch <dir>/run_training.slurm` | `bash <dir>/run_training.sh` |
->
-> Pick **one** option and follow it consistently. Do not mix `.slurm` and `.sh` scripts.
+**Choose one of the two setup options below:**
+| | Option 1: SLURM + Apptainer | Option 2: Native |
+|---|---|---|
+| **Environment** | HPC cluster with job scheduler | Any Linux machine with GPUs |
+| **Isolation** | Conda env + Apptainer container | Packages installed directly on system |
+| **Additional tools** | [Conda](https://docs.conda.io/), [Apptainer](https://apptainer.org/), SLURM | None |
+| **Run training/benchmarks** | `sbatch <dir>/run_training.slurm` | `bash <dir>/run_training.sh` |
+
+Pick **one** option and follow it consistently. Do not mix `.slurm` and `.sh` scripts.
 
 ### Setup
 
