@@ -97,7 +97,7 @@ The data preparation pipeline ([data_preperation.ipynb](data_preperation.ipynb))
 1. **Cleaning**: Unicode normalization (NFKC), removal of zero-width and control characters
 2. **SOAP extraction**: Regex-based parsing of Subjective, Objective, Assessment, and Plan sections
 3. **ICD-10 balancing**: Filtering to 5 examples per diagnosis code, yielding 10,030 records across 2,006 unique diagnoses
-4. **Stratified split**: 8,024 training / 2,006 validation examples, stratified by ICD-10 code
+4. **Stratified split**: 8,024 training / 2,006 validation examples, stratified by ICD-10 code, then SOAP-note in ascending order
 
 ## Architectures
 
