@@ -284,7 +284,7 @@ The 3B study uses the same data, hyperparameters, and evaluation pipeline as the
 
 ### Prerequisites
 
-- Linux environment with NVIDIA GPUs (3x A100-40GB recommended)
+- Linux environment with NVIDIA GPUs (3x A100-40GB recommended) and minimum CUDA 13.0
 - [Weights & Biases](https://wandb.ai/) account (optional, for experiment tracking)
 - [Hugging Face](https://huggingface.co/) account with access to the Ministral model
 

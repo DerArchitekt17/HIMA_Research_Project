@@ -5,3 +5,5 @@
 
 */basemodel
 */bertscore_model
+
+gcp-download.sh
