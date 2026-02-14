@@ -364,14 +364,14 @@ sbatch swarm_agents_small/run_training.slurm
 **Option 2 - Native:**
 ```bash
 # 8B model
-cd single_agent && nohup bash run_training.sh > training.log 2>&1 & 2>&1 & cd ..
-cd multi_agents && nohup bash run_training.sh > training.log 2>&1 & 2>&1 & cd ..
-cd swarm_agents && nohup bash run_training.sh > training.log 2>&1 & 2>&1 & cd ..
+cd single_agent && nohup bash run_training.sh > training.log 2>&1 & cd ..
+cd multi_agents && nohup bash run_training.sh > training.log 2>&1 & cd ..
+cd swarm_agents && nohup bash run_training.sh > training.log 2>&1 & cd ..
 
 # 3B model
-cd single_agent_small && nohup bash run_training.sh > training.log 2>&1 & 2>&1 & cd ..
-cd multi_agents_small && nohup bash run_training.sh > training.log 2>&1 & 2>&1 & cd ..
-cd swarm_agents_small && nohup bash run_training.sh > training.log 2>&1 & 2>&1 & cd ..
+cd single_agent_small && nohup bash run_training.sh > training.log 2>&1 & cd ..
+cd multi_agents_small && nohup bash run_training.sh > training.log 2>&1 & cd ..
+cd swarm_agents_small && nohup bash run_training.sh > training.log 2>&1 & cd ..
 ```
 
 (Optional / If available) Asyncronous WandB syncing (~30 sec interval)
