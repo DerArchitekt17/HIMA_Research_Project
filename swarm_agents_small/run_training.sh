@@ -24,8 +24,8 @@ for ROLE in drafter critic refiner; do
     for AGENT in subjective objective assessment plan; do
         CURRENT=$((CURRENT + 1))
 
-        export WANDB_PROJECT="hima_swarm_finetune"
-        export WANDB_NAME="swarm_${ROLE}_${AGENT}"
+        export WANDB_PROJECT="hima_swarm_small_finetune"
+        export WANDB_NAME="swarm_${AGENT}_${ROLE}_run"
 
         echo "========== [${CURRENT}/${TOTAL}] ${ROLE}/${AGENT} on ${NUM_GPUS} GPU(s) =========="
             accelerate launch \

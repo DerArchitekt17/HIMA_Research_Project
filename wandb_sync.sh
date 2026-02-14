@@ -12,8 +12,10 @@ set -u  # don't use -e; we want to continue even if wandb sync fails sometimes
 ENV_NAME="hima_research"
 INTERVAL=30
 
-# All 3 experiment directories to sync
-EXPERIMENTS="single_agent multi_agents swarm_agents"
+# All experiment directories to sync (Outcomment for more scoping)
+EXPERIMENTS="single_agent multi_agents swarm_agents single_agent_small multi_agents_small swarm_agents_small"
+#EXPERIMENTS="single_agent multi_agents swarm_agents"
+#EXPERIMENTS="single_agent_small multi_agents_small swarm_agents_small"
 
 # Stop only after this many consecutive empty checks (loop mode only).
 # Example: 10 checks * 30s = 5 minutes with nothing to sync -> exit
@@ -25,9 +27,15 @@ if [[ "${1:-}" == "--once" ]]; then
   ONCE=true
 fi
 
-# Conda activation for non-interactive shells
-source "$(conda info --base)/etc/profile.d/conda.sh"
-conda activate "$ENV_NAME"
+# Environment activation: try conda first, then fall back to PATH
+if command -v conda &>/dev/null; then
+  source "$(conda info --base)/etc/profile.d/conda.sh"
+  conda activate "$ENV_NAME"
+  echo "Starting W&B sync loop in env: $ENV_NAME"
+elif ! command -v wandb &>/dev/null; then
+  echo "ERROR: wandb not found. Activate a virtualenv or install wandb first." >&2
+  exit 1
+fi
 
 # Resolve project root (script location)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -56,7 +64,6 @@ if [[ "$ONCE" == true ]]; then
 fi
 
 # Loop mode: continuous sync with auto-exit on idle
-echo "Starting W&B sync loop in env: $ENV_NAME"
 echo "Experiments: $EXPERIMENTS"
 echo "Interval: ${INTERVAL}s"
 echo "Empty limit: $EMPTY_LIMIT cycles"

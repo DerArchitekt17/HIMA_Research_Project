@@ -26,6 +26,17 @@ transformers.utils.import_utils.check_torch_load_is_safe = lambda: None
 import transformers.trainer
 transformers.trainer.check_torch_load_is_safe = lambda: None
 
+# Workaround for HF transformers bug: Ministral 3B tokenizer has vocab_file=None,
+# which crashes convert_slow_tokenizer when it calls vocab_file.endswith(...)
+import sys, transformers.convert_slow_tokenizer
+_cst_mod = sys.modules["transformers.convert_slow_tokenizer"]
+_orig_convert = _cst_mod.convert_slow_tokenizer
+def _safe_convert(transformer_tokenizer, *args, **kwargs):
+    if getattr(transformer_tokenizer, "vocab_file", None) is None:
+        transformer_tokenizer.vocab_file = ""
+    return _orig_convert(transformer_tokenizer, *args, **kwargs)
+_cst_mod.convert_slow_tokenizer = _safe_convert
+
 import os
 import json
 import argparse

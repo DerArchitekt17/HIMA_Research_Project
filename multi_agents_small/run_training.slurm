@@ -4,7 +4,7 @@
 #SBATCH --gres=gpu:a100_40gb:3
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=32
-#SBATCH --mem=256G
+#SBATCH --mem=128G
 #SBATCH --time=48:00:00
 #SBATCH --output=logs/%j.out
 #SBATCH --error=logs/%j.err
@@ -35,8 +35,8 @@ TOTAL=4
 for AGENT in subjective objective assessment plan; do
     CURRENT=$((CURRENT + 1))
 
-    export WANDB_PROJECT="hima_multi_finetune"
-    export WANDB_NAME="multi_${AGENT}"
+    export WANDB_PROJECT="hima_multi_small_finetune"
+    export WANDB_NAME="multi_small_${AGENT}_run"
 
     echo "========== [${CURRENT}/${TOTAL}] ${AGENT} on ${NUM_GPUS} GPU(s) =========="
 

@@ -4,7 +4,7 @@
 #SBATCH --gres=gpu:a100_40gb:3
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=32
-#SBATCH --mem=128G
+#SBATCH --mem=64G
 #SBATCH --time=48:00:00
 #SBATCH --output=logs/%j.out
 #SBATCH --error=logs/%j.err
@@ -28,8 +28,8 @@ echo "Allocated ${NUM_GPUS} GPU(s) for training"
 # Create directories
 mkdir -p ${BASE_DIR}/logs ${BASE_DIR}/finetuned_models ${BASE_DIR}/wandb
 
-export WANDB_PROJECT="hima_single_finetune"
-export WANDB_NAME="hima_single_finetune_run"
+export WANDB_PROJECT="hima_single_small_finetune"
+export WANDB_NAME="single_small_run"
 
 # Train model
 echo "========== Training single SOAP model on ${NUM_GPUS} GPU(s) =========="
