@@ -45,7 +45,7 @@ Clinical documentation is a time-intensive task for healthcare professionals. Th
 │   │   ├── training_single.jsonl       # 8,024 training examples
 │   │   └── validation_single.jsonl     # 2,006 validation examples
 │   └── benchmark_results/
-│       └── hima_single_benchmark_n500_research.json
+│       └── hima_single_benchmark_n0.json # Benchmark results - all samples
 │
 ├── multi_agents/                       # Multi-agent architecture
 │   ├── train.py                        # Per-agent QLoRA fine-tuning script
@@ -66,8 +66,7 @@ Clinical documentation is a time-intensive task for healthcare professionals. Th
 │   │   │   ├── validation_assessment.jsonl
 │   │   │   └── validation_plan.jsonl
 │   │   └── benchmark_multi_agent.jsonl # Combined reference for evaluation
-│   └── benchmark_results/
-│       └── hima_multi_benchmark_n500_research.json
+│   └── benchmark_results/              # Benchmark results - all samples
 │
 ├── swarm_agents/                       # Swarm-agent architecture (DCR pipeline)
 │   ├── train.py                        # Per-role/dimension QLoRA fine-tuning
@@ -80,8 +79,7 @@ Clinical documentation is a time-intensive task for healthcare professionals. Th
 │   │   ├── training/                   # 12 JSONL files (3 roles × 4 dimensions)
 │   │   ├── validation/                 # 12 JSONL files (3 roles × 4 dimensions)
 │   │   └── benchmark_swarm_agents.jsonl
-│   └── benchmark_results/
-│       └── hima_swarm_benchmark_n0.json
+│   └── benchmark_results/              # Benchmark results - all samples
 │
 ├── baseline/                           # Baseline: ground-truth SOAP vs. dialogue
 │   ├── benchmark.py                    # Metrics-only script (no model inference)
@@ -89,34 +87,13 @@ Clinical documentation is a time-intensive task for healthcare professionals. Th
 │   ├── run_benchmark.slurm             # SLURM job for benchmarking
 │   ├── run_benchmark.sh                # Native benchmark script
 │   └── benchmark_results/
-│       └── base_data_benchmark_n0.json
+│       └── base_data_benchmark_n0.json # Benchmark results - all samples
 │
-├── single_agent_small/                 # 3B model study — single-agent
-│   ├── train.py
-│   ├── benchmark.py
-│   ├── run_training.slurm
-│   ├── run_training.sh
-│   ├── run_benchmark.slurm
-│   ├── run_benchmark.sh
-│   └── data/                           # Same data as 8B counterpart
+├── single_agent_small/                 # 3B model study - single-agent / Same data as 8B counterpart
 │
-├── multi_agents_small/                 # 3B model study — multi-agent
-│   ├── train.py
-│   ├── benchmark.py
-│   ├── run_training.slurm
-│   ├── run_training.sh
-│   ├── run_benchmark.slurm
-│   ├── run_benchmark.sh
-│   └── data/                           # Same data as 8B counterpart
+├── multi_agents_small/                 # 3B model study - multi-agent / Same data as 8B counterpart
 │
-└── swarm_agents_small/                 # 3B model study — swarm-agent
-    ├── train.py
-    ├── benchmark.py
-    ├── run_training.slurm
-    ├── run_training.sh
-    ├── run_benchmark.slurm
-    ├── run_benchmark.sh
-    └── data/                           # Same data as 8B counterpart
+└── swarm_agents_small/                 # 3B model study - swarm-agent / Same data as 8B counterpart
 ```
 
 ## Dataset
@@ -212,7 +189,7 @@ During inference, each architecture generates SOAP notes from consultation dialo
 
 ### Baseline (Ground-Truth SOAP vs. Dialogue)
 
-As a reference point, the ground-truth SOAP notes from the dataset are scored directly against their source consultation dialogues. No model inference is involved — this measures the inherent textual overlap between the raw dialogue and the structured SOAP output. Because SOAP notes reorganize, summarize, and add clinical structure to the conversation, scores are expected to be low. Any fine-tuned model should substantially exceed this baseline.
+As a reference point, the ground-truth SOAP notes from the dataset are scored directly against their source consultation dialogues. No model inference is involved - this measures the inherent textual overlap between the raw dialogue and the structured SOAP output. Because SOAP notes reorganize, summarize, and add clinical structure to the conversation, scores are expected to be low. Any fine-tuned model should substantially exceed this baseline.
 
 Evaluation on the full validation set (2,006 samples):
 
@@ -254,7 +231,7 @@ Benchmark evaluation on the full validation set (2,006 samples). All scores are 
 | Assessment |    0.430   |   0.299    |   0.389    |    0.886     |
 | Plan       |    0.734   |   0.519    |   0.573    |    0.925     |
 
-#### Swarm-Agent (Combined — Refiner Output)
+#### Swarm-Agent (Combined - Refiner Output)
 
 |  Metric   | Precision | Recall  |  F1   |
 |-----------|-----------|---------|-------|
@@ -263,7 +240,7 @@ Benchmark evaluation on the full validation set (2,006 samples). All scores are 
 | ROUGE-L   |   0.605   |  0.596  | 0.597 |
 | BERTScore |   0.922   |  0.920  | 0.921 |
 
-#### Swarm-Agent (Per Dimension — Refiner Output)
+#### Swarm-Agent (Per Dimension - Refiner Output)
 
 | Dimension  | ROUGE-1 F1 | ROUGE-2 F1 | ROUGE-L F1 | BERTScore F1 |
 |------------|------------|------------|------------|--------------|
@@ -293,23 +270,23 @@ The 3B study uses the same data, hyperparameters, and evaluation pipeline as the
 
 #### Single-Agent (3B)
 
-> Results pending — benchmarks not yet completed.
+> Results pending - benchmarks not yet completed.
 
 #### Multi-Agent (3B, Combined)
 
-> Results pending — benchmarks not yet completed.
+> Results pending - benchmarks not yet completed.
 
 #### Multi-Agent (3B, Per Agent)
 
-> Results pending — benchmarks not yet completed.
+> Results pending - benchmarks not yet completed.
 
 #### Swarm-Agent (3B, Combined)
 
-> Results pending — benchmarks not yet completed.
+> Results pending - benchmarks not yet completed.
 
 #### Swarm-Agent (3B, Per Dimension)
 
-> Results pending — benchmarks not yet completed.
+> Results pending - benchmarks not yet completed.
 
 ## Reproduction
 
@@ -379,7 +356,7 @@ Use this option when you have direct access to a GPU machine and can install pac
 
 Submit training for the desired architecture using the method that matches your setup option:
 
-**Option 1 — SLURM:**
+**Option 1 - SLURM:**
 ```bash
 # 8B model
 sbatch single_agent/run_training.slurm
@@ -392,7 +369,7 @@ sbatch multi_agents_small/run_training.slurm
 sbatch swarm_agents_small/run_training.slurm
 ```
 
-**Option 2 — Native:**
+**Option 2 - Native:**
 ```bash
 # 8B model
 cd single_agent && nohup bash run_training.sh > training.log 2>&1 & 2>&1 & cd ..
@@ -431,9 +408,9 @@ for exp in single_agent multi_agents swarm_agents single_agent_small multi_agent
 
 Configure benchmark parameters (e.g., number of samples) in the respective `run_benchmark.slurm` or `run_benchmark.sh` file, then run:
 
-**Option 1 — SLURM:**
+**Option 1 - SLURM:**
 ```bash
-# Baseline (no model inference — scores ground-truth SOAP vs. dialogue)
+# Baseline (no model inference - scores ground-truth SOAP vs. dialogue)
 sbatch baseline/run_benchmark.slurm
 
 # 8B model
@@ -447,7 +424,7 @@ sbatch multi_agents_small/run_benchmark.slurm
 sbatch swarm_agents_small/run_benchmark.slurm
 ```
 
-**Option 2 — Native:**
+**Option 2 - Native:**
 ```bash
 # Baseline
 cd baseline && bash run_benchmark.sh && cd ..
