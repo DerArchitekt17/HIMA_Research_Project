@@ -55,16 +55,8 @@ Clinical documentation is a time-intensive task for healthcare professionals. Th
 │   ├── run_benchmark.slurm             # SLURM job for benchmarking
 │   ├── run_benchmark.sh                # Native benchmark script
 │   ├── data/
-│   │   ├── training/
-│   │   │   ├── training_subjective.jsonl
-│   │   │   ├── training_objective.jsonl
-│   │   │   ├── training_assessment.jsonl
-│   │   │   └── training_plan.jsonl
-│   │   ├── validation/
-│   │   │   ├── validation_subjective.jsonl
-│   │   │   ├── validation_objective.jsonl
-│   │   │   ├── validation_assessment.jsonl
-│   │   │   └── validation_plan.jsonl
+│   │   ├── training/                   # 4 JSONL files (4 dimensions)
+│   │   ├── validation/                 # 4 JSONL files (4 dimensions)
 │   │   └── benchmark_multi_agent.jsonl # Combined reference for evaluation
 │   └── benchmark_results/              # Benchmark results - all samples
 │
