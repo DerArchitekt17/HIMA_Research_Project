@@ -266,19 +266,54 @@ The 3B study uses the same data, hyperparameters, and evaluation pipeline as the
 
 #### Multi-Agent (3B, Combined)
 
-> Results pending - benchmarks not yet completed.
+|  Metric   | Precision | Recall  |  F1   |
+|-----------|-----------|---------|-------|
+| ROUGE-1   |   0.772   |  0.747  | 0.756 |
+| ROUGE-2   |   0.536   |  0.519  | 0.525 |
+| ROUGE-L   |   0.606   |  0.587  | 0.593 |
+| BERTScore |   0.922   |  0.920  | 0.921 |
 
 #### Multi-Agent (3B, Per Agent)
 
-> Results pending - benchmarks not yet completed.
+| Agent      | ROUGE-1 F1 | ROUGE-2 F1 | ROUGE-L F1 | BERTScore F1 |
+|------------|------------|------------|------------|--------------|
+| Subjective |    0.738   |   0.501    |   0.602    |    0.938     |
+| Objective  |    0.774   |   0.633    |   0.721    |    0.943     |
+| Assessment |    0.450   |   0.307    |   0.407    |    0.887     |
+| Plan       |    0.724   |   0.508    |   0.561    |    0.924     |
 
-#### Swarm-Agent (3B, Combined)
+#### Swarm-Agent (3B, Combined - Refiner Output)
 
-> Results pending - benchmarks not yet completed.
+|  Metric   | Precision | Recall  |  F1   |
+|-----------|-----------|---------|-------|
+| ROUGE-1   |   0.773   |  0.740  | 0.752 |
+| ROUGE-2   |   0.539   |  0.516  | 0.524 |
+| ROUGE-L   |   0.608   |  0.583  | 0.592 |
+| BERTScore |   0.921   |  0.919  | 0.920 |
 
-#### Swarm-Agent (3B, Per Dimension)
+#### Swarm-Agent (3B, Per Dimension - Refiner Output)
 
-> Results pending - benchmarks not yet completed.
+| Dimension  | ROUGE-1 F1 | ROUGE-2 F1 | ROUGE-L F1 | BERTScore F1 |
+|------------|------------|------------|------------|--------------|
+| Subjective |    0.724   |   0.484    |   0.584    |    0.935     |
+| Objective  |    0.769   |   0.629    |   0.721    |    0.943     |
+| Assessment |    0.449   |   0.313    |   0.406    |    0.887     |
+| Plan       |    0.728   |   0.522    |   0.578    |    0.926     |
+
+#### Swarm-Agent (3B) Ablation (Drafter-Only vs. Refiner)
+
+Comparing Drafter output (before critique-refine) against the final Refiner output to quantify the contribution of the DCR loop:
+
+| Dimension  | Stage   | ROUGE-1 F1 | ROUGE-2 F1 | ROUGE-L F1 | BERTScore F1 |
+|------------|---------|------------|------------|------------|--------------|
+| Subjective | Drafter |    0.737   |   0.500    |   0.601    |    0.938     |
+| Subjective | Refiner |    0.724   |   0.484    |   0.584    |    0.935     |
+| Objective  | Drafter |    0.771   |   0.627    |   0.713    |    0.942     |
+| Objective  | Refiner |    0.769   |   0.629    |   0.721    |    0.943     |
+| Assessment | Drafter |    0.447   |   0.306    |   0.406    |    0.887     |
+| Assessment | Refiner |    0.449   |   0.313    |   0.406    |    0.887     |
+| Plan       | Drafter |    0.712   |   0.497    |   0.548    |    0.922     |
+| Plan       | Refiner |    0.728   |   0.522    |   0.578    |    0.926     |
 
 ## Reproduction
 
