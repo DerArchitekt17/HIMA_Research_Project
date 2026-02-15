@@ -90,7 +90,7 @@ Clinical documentation is a time-intensive task for healthcare professionals. Th
 
 ## Dataset
 
-The project uses the **MedSynth** dataset (`MedSynth_huggingface_final.csv`), a synthetic medical dataset containing 10,240 patient-doctor consultation dialogues paired with structured SOAP notes and ICD-10 diagnosis codes.
+The project uses the **MedSynth** dataset (`MedSynth_huggingface_final.csv`), a synthetic medical dataset containing 10,240 patient-doctor consultation dialogues paired with structured SOAP notes and ICD-10 diagnosis codes. Read their paper: ([MedSynth: Realistic, Synthetic Medical Dialogue-Note Pairs](https://arxiv.org/pdf/2508.01401))
 
 The data preparation pipeline ([data_preperation.ipynb](data_preperation.ipynb)) applies the following steps:
 
