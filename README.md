@@ -262,7 +262,12 @@ The 3B study uses the same data, hyperparameters, and evaluation pipeline as the
 
 #### Single-Agent (3B)
 
-> Results pending - benchmarks not yet completed.
+|  Metric   | Precision | Recall  |  F1   |
+|-----------|-----------|---------|-------|
+| ROUGE-1   |   0.787   |  0.768  | 0.774 |
+| ROUGE-2   |   0.557   |  0.544  | 0.549 |
+| ROUGE-L   |   0.632   |  0.617  | 0.622 |
+| BERTScore |   0.929   |  0.928  | 0.928 |
 
 #### Multi-Agent (3B, Combined)
 
