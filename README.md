@@ -1,4 +1,4 @@
-# Agentic Architectures for Clinical Consultation Intelligence
+# Agentic AI Architectures for Clinical Consultation Intelligence
 
 This repository contains the code, data, and experiment configurations for reproducing the results presented in the research paper *"Agentic Architectures for Clinical Consultation Intelligence"*.
 
@@ -490,7 +490,7 @@ Key dependencies (full list in [environment.yml](environment.yml)):
 
 ```
 @unpublished{<placeholder>,
-  title   = {Agentic Architectures for Clinical Consultation Intelligence},
+  title   = {Agentic AI Architectures for Clinical Consultation Intelligence},
   author  = {<author names>},
   year    = {2026},
   note    = {Submitted for grading and peer review}
