@@ -30,6 +30,6 @@ apptainer exec --nv \
     --bind ${BASE_DIR}:${BASE_DIR} \
     ${SIF} \
     python ${SCRIPT} ${NUM_SAMPLES_ARG} \
-    --output ${BENCHMARK_OUTPUT_FOLDER}/hima_multi_benchmark_n${NUMBER_OF_SAMPLES}.json
+    --output ${BENCHMARK_OUTPUT_FOLDER}/hima_multi_small_benchmark_n${NUMBER_OF_SAMPLES}.json
 
 echo "Benchmark complete."

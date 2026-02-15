@@ -16,6 +16,6 @@ fi
 
 # Run benchmark (auto-detects all available GPUs via torch.cuda.device_count)
 python ${SCRIPT} ${NUM_SAMPLES_ARG} \
-    --output ${BENCHMARK_OUTPUT_FOLDER}/hima_swarm_benchmark_n${NUMBER_OF_SAMPLES}.json
+    --output ${BENCHMARK_OUTPUT_FOLDER}/hima_swarm_small_benchmark_n${NUMBER_OF_SAMPLES}.json
 
 echo "Benchmark complete."
