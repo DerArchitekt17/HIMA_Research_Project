@@ -10,8 +10,8 @@
 #SBATCH --error=logs/%j.err
 
 # Setting environment variables
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+PROJECT_ROOT="${SLURM_SUBMIT_DIR}"
+SCRIPT_DIR="${PROJECT_ROOT}/swarm_agents"
 SIF="apptainer_runtime.sif"
 TRAIN_SCRIPT=${SCRIPT_DIR}/train.py
 

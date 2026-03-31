@@ -11,8 +11,8 @@
 
 # Setting environment variables
 NUMBER_OF_SAMPLES=0   # set to 0 to run all samples. 2,006 samples available
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+PROJECT_ROOT="${SLURM_SUBMIT_DIR}"
+SCRIPT_DIR="${PROJECT_ROOT}/swarm_agents"
 SIF="apptainer_runtime.sif"
 SCRIPT=${SCRIPT_DIR}/benchmark.py
 BENCHMARK_OUTPUT_FOLDER=${SCRIPT_DIR}/benchmark_results
