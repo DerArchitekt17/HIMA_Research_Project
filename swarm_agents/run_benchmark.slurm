@@ -11,13 +11,14 @@
 
 # Setting environment variables
 NUMBER_OF_SAMPLES=0   # set to 0 to run all samples. 2,006 samples available
-BASE_DIR="${SLURM_SUBMIT_DIR}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 SIF="apptainer_runtime.sif"
-SCRIPT=${BASE_DIR}/benchmark.py
-BENCHMARK_OUTPUT_FOLDER=${BASE_DIR}/benchmark_results
+SCRIPT=${SCRIPT_DIR}/benchmark.py
+BENCHMARK_OUTPUT_FOLDER=${SCRIPT_DIR}/benchmark_results
 
 # Create directories
-mkdir -p ${BASE_DIR}/logs ${BENCHMARK_OUTPUT_FOLDER}
+mkdir -p ${SCRIPT_DIR}/logs ${BENCHMARK_OUTPUT_FOLDER}
 
 # Configure online services for offline use
 export HF_HUB_OFFLINE=1

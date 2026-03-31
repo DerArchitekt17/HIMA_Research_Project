@@ -46,8 +46,9 @@ from peft import PeftModel
 from rouge_score import rouge_scorer
 
 from bert_score import score as bert_score
-# Must be absolute path - relative paths like ./bertscore_model are rejected as invalid repo IDs
-BERTSCORE_MODEL_DIR = os.path.abspath(os.path.join(os.getenv("SLURM_SUBMIT_DIR", "."), "bertscore_model"))
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.dirname(SCRIPT_DIR)
+BERTSCORE_MODEL_DIR = os.path.join(PROJECT_ROOT, "models", "bertscore")
 
 # Register missing ministral3 text config
 CONFIG_MAPPING_NAMES["ministral3"] = "MistralConfig"
@@ -65,10 +66,9 @@ parser.add_argument("--max_new_tokens", type=int, default=2048,
 args = parser.parse_args()
 
 # Set paths and environment variables
-BASE_DIR = os.getenv("SLURM_SUBMIT_DIR", ".")
-MODEL_DIR = os.path.join(BASE_DIR, "basemodel")
-DATA_DIR = os.path.join(BASE_DIR, "data")
-ADAPTER_DIR = os.path.join(BASE_DIR, "finetuned_models", "final_adapter")
+MODEL_DIR = os.path.join(PROJECT_ROOT, "models", "ministral3_3B")
+DATA_DIR = os.path.join(SCRIPT_DIR, "data")
+ADAPTER_DIR = os.path.join(SCRIPT_DIR, "finetuned_adapters", "final_adapter")
 
 os.environ["HF_HUB_OFFLINE"] = "1"
 os.environ["TRANSFORMERS_OFFLINE"] = "1"

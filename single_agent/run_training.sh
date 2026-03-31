@@ -1,7 +1,7 @@
 #!/bin/bash
 # Setting environment variables
-BASE_DIR="$(pwd)"
-TRAIN_SCRIPT=${BASE_DIR}/train.py
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+TRAIN_SCRIPT=${SCRIPT_DIR}/train.py
 
 # Auto-detect allocated GPUs
 if [ -n "${GPUS_ON_NODE}" ]; then
@@ -18,7 +18,7 @@ export WANDB_PROJECT="hima_single_finetune"
 export WANDB_NAME="single_agent"
 
 # Create directories
-mkdir -p ${BASE_DIR}/finetuned_models ${BASE_DIR}/wandb
+mkdir -p ${SCRIPT_DIR}/finetuned_adapters ${SCRIPT_DIR}/wandb
 
 # Train model
 echo "========== Training single SOAP model =========="

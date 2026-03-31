@@ -3,7 +3,6 @@
 
 *.sif
 
-*/basemodel
-*/bertscore_model
+models/
 
 gcp-download.sh

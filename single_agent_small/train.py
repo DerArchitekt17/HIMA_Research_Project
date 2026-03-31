@@ -58,10 +58,11 @@ CONFIG_MAPPING._extra_content["ministral3"] = MistralConfig
 MODEL_FOR_CAUSAL_LM_MAPPING._extra_content[Mistral3Config] = Mistral3ForConditionalGeneration
 
 # Set paths and environment variables
-BASE_DIR = os.getenv("SLURM_SUBMIT_DIR", ".")
-MODEL_DIR = os.path.join(BASE_DIR, "basemodel")
-DATA_DIR = os.path.join(BASE_DIR, "data")
-OUTPUT_DIR = os.path.join(BASE_DIR, "finetuned_models")
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.dirname(SCRIPT_DIR)
+MODEL_DIR = os.path.join(PROJECT_ROOT, "models", "ministral3_3B")
+DATA_DIR = os.path.join(SCRIPT_DIR, "data")
+OUTPUT_DIR = os.path.join(SCRIPT_DIR, "finetuned_adapters")
 
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
@@ -72,7 +73,7 @@ os.environ["WANDB_MODE"] = "offline"
 
 # Only initialize wandb on main process to avoid duplicate logging
 if IS_MAIN_PROCESS:
-    wandb.init(project=os.getenv("WANDB_PROJECT", ""), name=os.getenv("WANDB_NAME", ""), dir=BASE_DIR)
+    wandb.init(project=os.getenv("WANDB_PROJECT", ""), name=os.getenv("WANDB_NAME", ""), dir=SCRIPT_DIR)
 
 # Loading tokenizer
 tokenizer = AutoTokenizer.from_pretrained(

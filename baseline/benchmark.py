@@ -20,10 +20,9 @@ import torch.multiprocessing as mp
 from rouge_score import rouge_scorer
 from bert_score import score as bert_score
 
-# Must be absolute path - relative paths are rejected as invalid repo IDs
-BERTSCORE_MODEL_DIR = os.path.abspath(
-    os.path.join(os.getenv("SLURM_SUBMIT_DIR", "."), "bertscore_model")
-)
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.dirname(SCRIPT_DIR)
+BERTSCORE_MODEL_DIR = os.path.join(PROJECT_ROOT, "models", "bertscore")
 
 # CLI arguments
 parser = argparse.ArgumentParser()
@@ -84,8 +83,7 @@ def main():
     print(f"\nUsing {num_gpus} GPU(s) for metrics computation")
 
     # Load ground-truth data
-    BASE_DIR = os.getenv("SLURM_SUBMIT_DIR", ".")
-    data_path = os.path.join(BASE_DIR, "data/test/test_full.jsonl")
+    data_path = os.path.join(SCRIPT_DIR, "data/test/test_full.jsonl")
     print(f"Loading data from {data_path} ...")
     raw = load_jsonl(data_path)
     print(f"Loaded {len(raw)} records")

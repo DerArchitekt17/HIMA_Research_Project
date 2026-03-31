@@ -10,9 +10,10 @@
 #SBATCH --error=logs/%j.err
 
 # Setting environment variables
-BASE_DIR="${SLURM_SUBMIT_DIR}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 SIF="apptainer_runtime.sif"
-TRAIN_SCRIPT=${BASE_DIR}/train.py
+TRAIN_SCRIPT=${SCRIPT_DIR}/train.py
 
 # Auto-detect allocated GPUs (SLURM env -> CUDA_VISIBLE_DEVICES -> torch fallback)
 if [ -n "${SLURM_GPUS_ON_NODE}" ]; then
@@ -20,13 +21,13 @@ if [ -n "${SLURM_GPUS_ON_NODE}" ]; then
 elif [ -n "${CUDA_VISIBLE_DEVICES}" ]; then
     NUM_GPUS=$(echo "${CUDA_VISIBLE_DEVICES}" | awk -F',' '{print NF}')
 else
-    NUM_GPUS=$(apptainer exec --nv --bind ${BASE_DIR}:${BASE_DIR} ${SIF} \
+    NUM_GPUS=$(apptainer exec --nv --bind ${PROJECT_ROOT}:${PROJECT_ROOT} ${SIF} \
         python -c "import torch; print(torch.cuda.device_count())" 2>/dev/null | tail -1)
 fi
 echo "Allocated ${NUM_GPUS} GPU(s) for training"
 
 # Create directories
-mkdir -p ${BASE_DIR}/logs ${BASE_DIR}/finetuned_models ${BASE_DIR}/wandb
+mkdir -p ${SCRIPT_DIR}/logs ${SCRIPT_DIR}/finetuned_adapters ${SCRIPT_DIR}/wandb
 
 # Train all 4 agents sequentially - each uses ALL available GPUs via accelerate
 CURRENT=0
@@ -41,7 +42,7 @@ for AGENT in subjective objective assessment plan; do
     echo "========== [${CURRENT}/${TOTAL}] ${AGENT} on ${NUM_GPUS} GPU(s) =========="
 
     apptainer exec --nv \
-        --bind ${BASE_DIR}:${BASE_DIR} \
+        --bind ${PROJECT_ROOT}:${PROJECT_ROOT} \
         ${SIF} \
         accelerate launch \
             --num_processes ${NUM_GPUS} \

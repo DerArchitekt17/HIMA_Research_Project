@@ -1,9 +1,9 @@
 #!/bin/bash
 # Setting environment variables
 NUMBER_OF_SAMPLES=0   # set to 0 to run all samples. 2,006 samples available
-BASE_DIR="$(pwd)"
-SCRIPT=${BASE_DIR}/benchmark.py
-BENCHMARK_OUTPUT_FOLDER=${BASE_DIR}/benchmark_results
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT=${SCRIPT_DIR}/benchmark.py
+BENCHMARK_OUTPUT_FOLDER=${SCRIPT_DIR}/benchmark_results
 
 # Create directory
 mkdir -p ${BENCHMARK_OUTPUT_FOLDER}
