@@ -15,7 +15,7 @@ echo "Allocated ${NUM_GPUS} GPU(s) for training"
 
 # WANDB parameters
 export WANDB_PROJECT="hima_single_finetune"
-export WANDB_NAME="single_agent"
+export WANDB_NAME="single"
 
 # Create directories
 mkdir -p ${SCRIPT_DIR}/finetuned_adapters ${SCRIPT_DIR}/wandb

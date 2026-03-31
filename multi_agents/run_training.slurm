@@ -37,7 +37,7 @@ for AGENT in subjective objective assessment plan; do
     CURRENT=$((CURRENT + 1))
 
     export WANDB_PROJECT="hima_multi_finetune"
-    export WANDB_NAME="multi_${AGENT}"
+    export WANDB_NAME="${AGENT}"
 
     echo "========== [${CURRENT}/${TOTAL}] ${AGENT} on ${NUM_GPUS} GPU(s) =========="
 

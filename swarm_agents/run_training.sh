@@ -25,7 +25,7 @@ for ROLE in drafter critic refiner; do
         CURRENT=$((CURRENT + 1))
 
         export WANDB_PROJECT="hima_swarm_finetune"
-        export WANDB_NAME="swarm_${ROLE}_${AGENT}"
+        export WANDB_NAME="${ROLE}_${AGENT}"
 
         echo "========== [${CURRENT}/${TOTAL}] ${ROLE}/${AGENT} on ${NUM_GPUS} GPU(s) =========="
             accelerate launch \

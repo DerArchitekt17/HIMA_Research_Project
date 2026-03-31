@@ -30,7 +30,7 @@ echo "Allocated ${NUM_GPUS} GPU(s) for training"
 mkdir -p ${SCRIPT_DIR}/logs ${SCRIPT_DIR}/finetuned_adapters ${SCRIPT_DIR}/wandb
 
 export WANDB_PROJECT="hima_single_finetune"
-export WANDB_NAME="hima_single_finetune_run"
+export WANDB_NAME="single"
 
 # Train model
 echo "========== Training single SOAP model on ${NUM_GPUS} GPU(s) =========="
