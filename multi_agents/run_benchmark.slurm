@@ -10,7 +10,7 @@
 #SBATCH --error=logs/%j.err
 
 # Setting environment variables
-NUMBER_OF_SAMPLES=500   # set to 0 to run all samples. 2,006 samples available
+NUMBER_OF_SAMPLES=0   # set to 0 to run all samples. 2,006 samples available
 PROJECT_ROOT="${SLURM_SUBMIT_DIR}"
 SCRIPT_DIR="${PROJECT_ROOT}/multi_agents"
 SIF="apptainer_runtime.sif"
