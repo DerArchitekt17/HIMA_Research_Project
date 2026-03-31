@@ -34,7 +34,12 @@ Clinical documentation is a time-intensive task for healthcare professionals. Th
 ├── setup_native_runtime.sh             # Native runtime setup (no container/conda)
 ├── download_models.sh                  # Model download script (~15 GB)
 │
-├── single_agent/                       # Single-agent architecture
+├── models/                             # Shared base models (downloaded once)
+│   ├── ministral3_8B/                  # Ministral-3-8B-Reasoning-2512
+│   ├── ministral3_3B/                  # Ministral-3-3B-Reasoning-2512
+│   └── bertscore/                      # roberta-large (for BERTScore evaluation)
+│
+├── single_agent/                       # Single-agent architecture (8B)
 │   ├── train.py                        # QLoRA fine-tuning script
 │   ├── benchmark.py                    # Evaluation script (ROUGE + BERTScore)
 │   ├── run_training.slurm              # SLURM job for training
@@ -46,9 +51,10 @@ Clinical documentation is a time-intensive task for healthcare professionals. Th
 │   │   ├── validation_single.jsonl     # ~802 validation examples
 │   │   └── test/
 │   │       └── test_full.jsonl         # 2,006 test examples (1 per ICD code)
+│   ├── finetuned_adapters/             # LoRA adapters (output of training)
 │   └── benchmark_results/
 │
-├── multi_agents/                       # Multi-agent architecture
+├── multi_agents/                       # Multi-agent architecture (8B)
 │   ├── train.py                        # Per-agent QLoRA fine-tuning script
 │   ├── benchmark.py                    # Multi-agent evaluation script
 │   ├── run_training.slurm              # SLURM job for training (parallel agents)
@@ -59,9 +65,10 @@ Clinical documentation is a time-intensive task for healthcare professionals. Th
 │   │   ├── training/                   # 4 JSONL files (4 dimensions)
 │   │   ├── validation/                 # 4 JSONL files (4 dimensions)
 │   │   └── test/                       # test_full.jsonl + 4 per-dimension test files
+│   ├── finetuned_adapters/             # LoRA adapters per SOAP dimension
 │   └── benchmark_results/
 │
-├── swarm_agents/                       # Swarm-agent architecture (DCR pipeline)
+├── swarm_agents/                       # Swarm-agent architecture (8B, DCR pipeline)
 │   ├── train.py                        # Per-role/dimension QLoRA fine-tuning
 │   ├── benchmark.py                    # DCR pipeline evaluation script
 │   ├── run_training.slurm              # SLURM job for training (12 agents)
@@ -72,6 +79,7 @@ Clinical documentation is a time-intensive task for healthcare professionals. Th
 │   │   ├── training/                   # 12 JSONL files (3 roles × 4 dimensions)
 │   │   ├── validation/                 # 12 JSONL files (3 roles × 4 dimensions)
 │   │   └── test/                       # test_full.jsonl + 12 per-role/dimension test files
+│   ├── finetuned_adapters/             # LoRA adapters per role × dimension
 │   └── benchmark_results/
 │
 ├── baseline/                           # Baseline: ground-truth SOAP vs. dialogue
@@ -356,7 +364,7 @@ Use this option on shared HPC systems where you cannot install packages globally
    ```bash
    ./build_apptainer_image.sh
    ```
-   This produces `apptainer_runtime.sif`, which the `.slurm` scripts reference to execute training and benchmarking inside the container.
+   This produces `apptainer_runtime.sif` in the project root, which the `.slurm` scripts reference to execute training and benchmarking inside the container.
 
 #### Option 2: Native Installation
 
@@ -375,10 +383,11 @@ Use this option when you have direct access to a GPU machine and can install pac
    hf auth login --token YOUR_TOKEN
    ```
 
-2. **Download models and copy them into all architecture dirs** (~15 GB)
+2. **Download models to the shared `models/` directory** (~15 GB)
    ```bash
    ./download_models.sh
    ```
+   This downloads the base models once into `models/ministral3_8B/`, `models/ministral3_3B/`, and `models/bertscore/`. All architectures reference these shared copies.
 
 3. **Login to Weights & Biases** (optional)
    ```bash
@@ -405,14 +414,14 @@ sbatch swarm_agents_small/run_training.slurm
 **Option 2 - Native:**
 ```bash
 # 8B model
-cd single_agent && nohup bash run_training.sh > training.log 2>&1 & cd ..
-cd multi_agents && nohup bash run_training.sh > training.log 2>&1 & cd ..
-cd swarm_agents && nohup bash run_training.sh > training.log 2>&1 & cd ..
+nohup bash single_agent/run_training.sh > single_agent/training.log 2>&1 &
+nohup bash multi_agents/run_training.sh > multi_agents/training.log 2>&1 &
+nohup bash swarm_agents/run_training.sh > swarm_agents/training.log 2>&1 &
 
 # 3B model
-cd single_agent_small && nohup bash run_training.sh > training.log 2>&1 & cd ..
-cd multi_agents_small && nohup bash run_training.sh > training.log 2>&1 & cd ..
-cd swarm_agents_small && nohup bash run_training.sh > training.log 2>&1 & cd ..
+nohup bash single_agent_small/run_training.sh > single_agent_small/training.log 2>&1 &
+nohup bash multi_agents_small/run_training.sh > multi_agents_small/training.log 2>&1 &
+nohup bash swarm_agents_small/run_training.sh > swarm_agents_small/training.log 2>&1 &
 ```
 
 (Optional / If available) Asyncronous WandB syncing (~30 sec interval)
@@ -460,20 +469,20 @@ sbatch swarm_agents_small/run_benchmark.slurm
 **Option 2 - Native:**
 ```bash
 # Baseline
-cd baseline && bash run_benchmark.sh && cd ..
+bash baseline/run_benchmark.sh
 
 # 8B model
-cd single_agent && nohup bash run_benchmark.sh > benchmark.log 2>&1 & cd ..
-cd multi_agents && nohup bash run_benchmark.sh > benchmark.log 2>&1 & cd ..
-cd swarm_agents && nohup bash run_benchmark.sh > benchmark.log 2>&1 & cd ..
+nohup bash single_agent/run_benchmark.sh > single_agent/benchmark.log 2>&1 &
+nohup bash multi_agents/run_benchmark.sh > multi_agents/benchmark.log 2>&1 &
+nohup bash swarm_agents/run_benchmark.sh > swarm_agents/benchmark.log 2>&1 &
 
 # 3B model
-cd single_agent_small && nohup bash run_benchmark.sh > benchmark.log 2>&1 & cd ..
-cd multi_agents_small && nohup bash run_benchmark.sh > benchmark.log 2>&1 & cd ..
-cd swarm_agents_small && nohup bash run_benchmark.sh > benchmark.log 2>&1 & cd ..
+nohup bash single_agent_small/run_benchmark.sh > single_agent_small/benchmark.log 2>&1 &
+nohup bash multi_agents_small/run_benchmark.sh > multi_agents_small/benchmark.log 2>&1 &
+nohup bash swarm_agents_small/run_benchmark.sh > swarm_agents_small/benchmark.log 2>&1 &
 ```
 
-Results are saved to `benchmark_results/` in each architecture folder.
+Results are saved to `benchmark_results/` in each architecture folder. Trained LoRA adapters are saved to `finetuned_adapters/` in each architecture folder.
 
 ## Requirements
 
