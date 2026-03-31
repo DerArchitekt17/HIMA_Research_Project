@@ -12,7 +12,7 @@
 # Setting environment variables
 NUMBER_OF_SAMPLES=0   # set to 0 to run all samples. 2,006 samples available
 BASE_DIR="${SLURM_SUBMIT_DIR}"
-SIF="../apptainer_runtime.sif"
+SIF="apptainer_runtime.sif"
 SCRIPT=${BASE_DIR}/benchmark.py
 BENCHMARK_OUTPUT_FOLDER=${BASE_DIR}/benchmark_results
 

@@ -11,7 +11,7 @@
 
 # Setting environment variables
 BASE_DIR="${SLURM_SUBMIT_DIR}"
-SIF="../apptainer_runtime.sif"
+SIF="apptainer_runtime.sif"
 TRAIN_SCRIPT=${BASE_DIR}/train.py
 
 # Auto-detect allocated GPUs (SLURM env -> CUDA_VISIBLE_DEVICES -> torch fallback)

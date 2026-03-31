@@ -372,7 +372,7 @@ Use this option when you have direct access to a GPU machine and can install pac
 
 1. **Authenticate with Hugging Face**
    ```bash
-   huggingface-cli login --token YOUR_TOKEN
+   hf auth login --token YOUR_TOKEN
    ```
 
 2. **Download models and copy them into all architecture dirs** (~15 GB)
