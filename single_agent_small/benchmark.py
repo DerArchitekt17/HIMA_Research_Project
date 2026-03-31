@@ -84,9 +84,9 @@ def load_jsonl(path: str) -> list[dict]:
     return records
 
 
-# Validation data loading
-print("Loading validation data ...")
-validation_data = load_jsonl(os.path.join(DATA_DIR, "validation_single.jsonl"))
+# Test data loading
+print("Loading test data ...")
+validation_data = load_jsonl(os.path.join(DATA_DIR, "test/test_full.jsonl"))
 print(f"Loaded {len(validation_data)} records")
 
 # Prepare dataset

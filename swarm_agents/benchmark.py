@@ -99,8 +99,8 @@ def extract_dialogue(user_message: str) -> str:
 
 
 # Load combined reference (single-LLM full SOAP notes for fair cross-architecture comparison)
-print("Loading single-LLM validation data ...")
-benchmark_ref = load_jsonl(os.path.join(DATA_DIR, "benchmark_swarm_agents.jsonl"))
+print("Loading single-LLM test data ...")
+benchmark_ref = load_jsonl(os.path.join(DATA_DIR, "test/test_full.jsonl"))
 print(f"Loaded {len(benchmark_ref)} single-LLM records")
 
 single_llm_refs = {}
@@ -111,11 +111,11 @@ for rec in benchmark_ref:
     dialogue = extract_dialogue(user_msg)
     single_llm_refs[dialogue] = ref
 
-# Load drafter validation data (contains dialogue + gold sections)
-print("Loading drafter validation data ...")
+# Load drafter test data (contains dialogue + gold sections)
+print("Loading drafter test data ...")
 drafter_data = {}
 for dim in DIMENSIONS:
-    path = os.path.join(DATA_DIR, f"validation/validation_drafter_{dim}.jsonl")
+    path = os.path.join(DATA_DIR, f"test/test_drafter_{dim}.jsonl")
     drafter_data[dim] = load_jsonl(path)
 
 num_records = len(drafter_data["subjective"])
@@ -127,7 +127,7 @@ role_system_prompts = {}
 for role in ROLES:
     role_system_prompts[role] = {}
     for dim in DIMENSIONS:
-        path = os.path.join(DATA_DIR, f"validation/validation_{role}_{dim}.jsonl")
+        path = os.path.join(DATA_DIR, f"test/test_{role}_{dim}.jsonl")
         first_rec = load_jsonl(path)[0]
         msgs = first_rec["messages"]
         role_system_prompts[role][dim] = next(

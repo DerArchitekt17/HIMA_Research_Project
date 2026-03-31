@@ -85,7 +85,7 @@ def main():
 
     # Load ground-truth data
     BASE_DIR = os.getenv("SLURM_SUBMIT_DIR", ".")
-    data_path = os.path.join(BASE_DIR, "benchmark_baseline.jsonl")
+    data_path = os.path.join(BASE_DIR, "data/test/test_full.jsonl")
     print(f"Loading data from {data_path} ...")
     raw = load_jsonl(data_path)
     print(f"Loaded {len(raw)} records")

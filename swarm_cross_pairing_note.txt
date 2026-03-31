@@ -1,0 +1,66 @@
+Swarm-Agent Data: Cross-Pairing for Synthetic Critic & Refiner Training
+=========================================================================
+
+OVERVIEW
+--------
+The Swarm-Agent architecture uses a Draft-Critique-Refine (DCR) pipeline
+with 3 roles per SOAP dimension (12 adapters total). The Critic and
+Refiner require training data that includes synthetic "imperfect drafts"
+and programmatic critiques, generated via ICD-code cross-pairing.
+
+All roles produce identical record counts across all splits:
+
+  Split        Drafter    Critic    Refiner    Single/Multi-Agent
+  Training     7,222      7,222     7,222      7,222
+  Validation     802        802       802        802
+  Test         2,006      2,006     2,006      2,006
+
+All four SOAP dimensions (S, O, A, P) are equally sized within each role.
+
+
+CROSS-PAIRING ALGORITHM
+------------------------
+The build_cross_pairs function (data_preperation.ipynb) generates
+synthetic imperfect drafts for Critic and Refiner training:
+
+  1. Group all rows by ICD-10 code.
+  2. For groups with >= 2 members: create a circular shift pairing.
+     Each row is paired with the next row in its group (wrapping around),
+     producing exactly N pairs for a group of size N.
+  3. For singleton groups (ICD codes with only 1 sample in the split):
+     collect all singletons, shuffle them, and pair them sequentially
+     in twos. Each pair produces 2 entries (both directions).
+  4. If the number of singletons is odd, the last singleton has no
+     partner and is dropped.
+
+With the current random seed (SEED=0), all splits produce an even
+number of singletons, so no samples are lost:
+
+  Training:    10 singletons (even) -> 10 cross-pair entries, 0 dropped
+  Validation: 592 singletons (even) -> 592 cross-pair entries, 0 dropped
+  Test:      2006 singletons (even) -> 2006 cross-pair entries, 0 dropped
+
+The high singleton counts in validation and test are expected: the
+70/10/20 stratified split assigns ~0.4 samples per ICD code to
+validation and exactly 1 per code to test, so most codes in those
+splits appear only once.
+
+
+NOTE ON SEED SENSITIVITY
+-------------------------
+The zero-drop outcome depends on the random seed producing an even
+singleton count. With a different seed, an odd singleton count would
+cause exactly 1 sample to be dropped per affected split. The maximum
+possible loss is 1 sample per split (<0.05% of any split), affecting
+only Critic and Refiner roles uniformly across all four SOAP dimensions.
+
+
+SINGLETON CROSS-PAIRING
+------------------------
+When singletons are paired with each other (step 3), they are matched
+across ICD codes rather than within the same code. This is a necessary
+fallback since no same-code partner exists. The resulting synthetic
+critiques for these pairs are less clinically precise (the "imperfect
+draft" comes from a different diagnosis), but they still teach the model
+the critique format and task structure. The model's pre-trained reasoning
+refines quality beyond what the synthetic training signal provides.

@@ -42,10 +42,11 @@ Clinical documentation is a time-intensive task for healthcare professionals. Th
 │   ├── run_benchmark.slurm             # SLURM job for benchmarking
 │   ├── run_benchmark.sh                # Native benchmark script
 │   ├── data/
-│   │   ├── training_single.jsonl       # 8,024 training examples
-│   │   └── validation_single.jsonl     # 2,006 validation examples
+│   │   ├── training_single.jsonl       # ~7,222 training examples
+│   │   ├── validation_single.jsonl     # ~802 validation examples
+│   │   └── test/
+│   │       └── test_full.jsonl         # 2,006 test examples (1 per ICD code)
 │   └── benchmark_results/
-│       └── hima_single_benchmark_n0.json # Benchmark results - all samples
 │
 ├── multi_agents/                       # Multi-agent architecture
 │   ├── train.py                        # Per-agent QLoRA fine-tuning script
@@ -57,8 +58,8 @@ Clinical documentation is a time-intensive task for healthcare professionals. Th
 │   ├── data/
 │   │   ├── training/                   # 4 JSONL files (4 dimensions)
 │   │   ├── validation/                 # 4 JSONL files (4 dimensions)
-│   │   └── benchmark_multi_agent.jsonl # Combined reference for evaluation
-│   └── benchmark_results/              # Benchmark results - all samples
+│   │   └── test/                       # test_full.jsonl + 4 per-dimension test files
+│   └── benchmark_results/
 │
 ├── swarm_agents/                       # Swarm-agent architecture (DCR pipeline)
 │   ├── train.py                        # Per-role/dimension QLoRA fine-tuning
@@ -70,16 +71,17 @@ Clinical documentation is a time-intensive task for healthcare professionals. Th
 │   ├── data/
 │   │   ├── training/                   # 12 JSONL files (3 roles × 4 dimensions)
 │   │   ├── validation/                 # 12 JSONL files (3 roles × 4 dimensions)
-│   │   └── benchmark_swarm_agents.jsonl
-│   └── benchmark_results/              # Benchmark results - all samples
+│   │   └── test/                       # test_full.jsonl + 12 per-role/dimension test files
+│   └── benchmark_results/
 │
 ├── baseline/                           # Baseline: ground-truth SOAP vs. dialogue
 │   ├── benchmark.py                    # Metrics-only script (no model inference)
-│   ├── benchmark_baseline.jsonl        # Ground-truth SOAP + dialogue pairs
+│   ├── data/
+│   │   └── test/
+│   │       └── test_full.jsonl         # Ground-truth SOAP + dialogue pairs
 │   ├── run_benchmark.slurm             # SLURM job for benchmarking
 │   ├── run_benchmark.sh                # Native benchmark script
 │   └── benchmark_results/
-│       └── base_data_benchmark_n0.json # Benchmark results - all samples
 │
 ├── single_agent_small/                 # 3B model study - single-agent / Same data as 8B counterpart
 │
@@ -97,7 +99,7 @@ The data preparation pipeline ([data_preperation.ipynb](data_preperation.ipynb))
 1. **Cleaning**: Unicode normalization (NFKC), removal of zero-width and control characters
 2. **SOAP extraction**: Regex-based parsing of Subjective, Objective, Assessment, and Plan sections
 3. **ICD-10 balancing**: Filtering to 5 examples per diagnosis code, yielding 10,030 records across 2,006 unique diagnoses
-4. **Stratified split**: 8,024 training / 2,006 validation examples, stratified by ICD-10 code, then SOAP-note in ascending order
+4. **Stratified split** (70/10/20): 1 random sample per ICD-10 code is held out as the **test set** (2,006 examples). From the remaining 4 samples per code, 10% are randomly sampled for **validation** (~802 examples) and the rest form the **training set** (~7,222 examples). A fixed seed ensures reproducibility.
 
 ## Architectures
 
@@ -183,7 +185,7 @@ During inference, each architecture generates SOAP notes from consultation dialo
 
 As a reference point, the ground-truth SOAP notes from the dataset are scored directly against their source consultation dialogues. No model inference is involved - this measures the inherent textual overlap between the raw dialogue and the structured SOAP output. Because SOAP notes reorganize, summarize, and add clinical structure to the conversation, scores are expected to be low. Any fine-tuned model should substantially exceed this baseline.
 
-Evaluation on the full validation set (2,006 samples):
+Evaluation on the held-out test set (2,006 samples):
 
 |  Metric   | Precision | Recall  |  F1   |
 |-----------|-----------|---------|-------|
@@ -194,7 +196,7 @@ Evaluation on the full validation set (2,006 samples):
 
 ### 8B Model (Ministral-3-8B-Reasoning-2512)
 
-Benchmark evaluation on the full validation set (2,006 samples). All scores are F1.
+Benchmark evaluation on the held-out test set (2,006 samples). All scores are F1.
 
 #### Single-Agent
 

@@ -88,9 +88,9 @@ def extract_dialogue(user_message: str) -> str:
     return parts[1] if len(parts) > 1 else user_message
 
 
-# Loading uniform benchmark data
-print("Loading single-LLM validation data ...")
-multi_agent_benchmark = load_jsonl(os.path.join(DATA_DIR, "benchmark_multi_agents.jsonl"))
+# Loading uniform test data
+print("Loading single-LLM test data ...")
+multi_agent_benchmark = load_jsonl(os.path.join(DATA_DIR, "test/test_full.jsonl"))
 print(f"Loaded {len(multi_agent_benchmark)} single-LLM records")
 
 single_llm_refs = {}
@@ -101,10 +101,10 @@ for rec in multi_agent_benchmark:
     dialogue = extract_dialogue(user_msg)
     single_llm_refs[dialogue] = ref
 
-print("Loading agent validation data ...")
+print("Loading agent test data ...")
 agent_data = {}
 for agent in AGENTS:
-    path = os.path.join(DATA_DIR, f"validation/validation_{agent}.jsonl")
+    path = os.path.join(DATA_DIR, f"test/test_{agent}.jsonl")
     agent_data[agent] = load_jsonl(path)
 
 num_records = len(agent_data["subjective"])
