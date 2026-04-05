@@ -11,7 +11,7 @@
 
 # Setting environment variables
 NUMBER_OF_SAMPLES=0   # set to 0 to run all samples. 2,006 samples available
-BATCH_SIZE=16         # samples per GPU per batch (reduce to 8 if OOM)
+BATCH_SIZE=32         # samples per GPU per batch (reduce if OOM)
 PROJECT_ROOT="${SLURM_SUBMIT_DIR}"
 SCRIPT_DIR="${PROJECT_ROOT}/single_agent_small"
 SIF="apptainer_runtime.sif"

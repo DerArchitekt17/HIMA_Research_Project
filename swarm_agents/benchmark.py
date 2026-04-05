@@ -69,6 +69,8 @@ parser.add_argument("--output", type=str,
                     help="Path to save results JSON")
 parser.add_argument("--max_new_tokens", type=int, default=2048,
                     help="Max new tokens per generation call")
+parser.add_argument("--batch_size", type=int, default=16,
+                    help="Batch size per GPU for generation (reduce if OOM)")
 args = parser.parse_args()
 
 # Set paths and environment variables
@@ -77,6 +79,7 @@ DATA_DIR = os.path.join(SCRIPT_DIR, "data")
 
 os.environ["HF_HUB_OFFLINE"] = "1"
 os.environ["TRANSFORMERS_OFFLINE"] = "1"
+os.environ["WANDB_DISABLED"] = "true"
 
 
 # ---------------------------------------------------------------------------
@@ -174,8 +177,8 @@ if args.num_samples > 0:
 # ---------------------------------------------------------------------------
 
 def worker(gpu_id: int, samples: list[dict], max_new_tokens: int,
-           system_prompts: dict, result_queue: mp.Queue):
-    """Load base model + 12 LoRA adapters on gpu_id, run DCR pipeline per sample."""
+           batch_size: int, system_prompts: dict, result_queue: mp.Queue):
+    """Load base model + 12 LoRA adapters on gpu_id, run DCR pipeline in batches."""
     device = f"cuda:{gpu_id}"
     print(f"[GPU {gpu_id}] Loading base model ...", flush=True)
 
@@ -191,6 +194,7 @@ def worker(gpu_id: int, samples: list[dict], max_new_tokens: int,
     )
     if tok.pad_token is None:
         tok.pad_token = tok.eos_token
+    tok.padding_side = "left"  # Required for batched decoder generation
 
     model = AutoModelForCausalLM.from_pretrained(
         MODEL_DIR,
@@ -221,131 +225,154 @@ def worker(gpu_id: int, samples: list[dict], max_new_tokens: int,
 
     print(f"[GPU {gpu_id}] Adapters: {list(model.peft_config.keys())}", flush=True)
 
-    def gen(adapter_name, sys_prompt, user_message):
+    def batched_generate(adapter_name, prompts):
+        """Generate for all prompts using the given adapter, in sub-batches."""
         model.set_adapter(adapter_name)
         model.eval()
-        messages = [
-            {"role": "system", "content": sys_prompt},
-            {"role": "user", "content": user_message},
-        ]
-        prompt = tok.apply_chat_template(
-            messages, tokenize=False, add_generation_prompt=True
-        )
-        inputs = tok(prompt, return_tensors="pt").to(device)
-        n_in = inputs["input_ids"].shape[1]
-
+        all_texts = []
+        total_tokens = 0
         t0 = time.time()
-        with torch.no_grad():
-            outputs = model.generate(
-                **inputs,
-                max_new_tokens=max_new_tokens,
-                do_sample=False,
-                eos_token_id=tok.eos_token_id,
-            )
-        n_out = outputs[0].shape[0] - n_in
+
+        for b_start in range(0, len(prompts), batch_size):
+            batch_prompts = prompts[b_start : b_start + batch_size]
+            inputs = tok(batch_prompts, return_tensors="pt", padding=True).to(device)
+            padded_len = inputs["input_ids"].shape[1]
+
+            with torch.no_grad():
+                outputs = model.generate(
+                    **inputs,
+                    max_new_tokens=max_new_tokens,
+                    do_sample=False,
+                    eos_token_id=tok.eos_token_id,
+                )
+
+            for i in range(len(batch_prompts)):
+                text = tok.decode(outputs[i][padded_len:], skip_special_tokens=True)
+                all_texts.append(text)
+                total_tokens += outputs[i].shape[0] - padded_len
+
         elapsed = time.time() - t0
-        print(
-            f"    [GPU {gpu_id}][{adapter_name}] {n_in}->{n_out} tokens "
-            f"({n_out / max(elapsed, 0.01):.1f} tok/s)",
-            flush=True,
-        )
-        return tok.decode(outputs[0][n_in:], skip_special_tokens=True)
+        print(f"  [GPU {gpu_id}][{adapter_name}] {len(prompts)} samples, "
+              f"{total_tokens} tokens in {elapsed:.1f}s "
+              f"({total_tokens/max(elapsed,0.01):.0f} tok/s)", flush=True)
+        return all_texts
 
-    # Process assigned samples
-    sample_times = []
-    for idx, sample in enumerate(samples):
-        sample_start = time.time()
-        print(
-            f"[GPU {gpu_id}] Sample {sample['_global_idx'] + 1}/{sample['_total']} ...",
-            flush=True,
-        )
+    # Stage-by-stage batched generation (12 stages: D→C→R × 4 dimensions)
+    n = len(samples)
+    drafter_outputs = {dim: [None] * n for dim in DIMENSIONS}
+    critic_outputs = {dim: [None] * n for dim in DIMENSIONS}
+    refiner_outputs = {dim: [None] * n for dim in DIMENSIONS}
+    soap_so_far = [""] * n
+    stage_times = []
+    total_stages = len(DIMENSIONS) * len(ROLES)  # 12
 
-        drafter_outputs = {}
-        critic_outputs = {}
-        refiner_outputs = {}
-        soap_so_far = ""
+    for dim in DIMENSIONS:
+        # --- Drafter ---
+        stage_t0 = time.time()
+        print(f"[GPU {gpu_id}] Stage: drafter_{dim} ({n} samples) ...", flush=True)
 
-        for dim in DIMENSIONS:
-            # --- Drafter ---
+        prompts = []
+        for i, s in enumerate(samples):
             drafter_msg = (
                 f"Draft the {dim.capitalize()} section from the following "
-                f"consultation dialogue:\n\n{sample['dialogue']}"
+                f"consultation dialogue:\n\n{s['dialogue']}"
             )
-            if soap_so_far:
+            if soap_so_far[i]:
                 drafter_msg += (
-                    f"\n\nPreviously generated SOAP sections:\n{soap_so_far.rstrip()}"
+                    f"\n\nPreviously generated SOAP sections:\n{soap_so_far[i].rstrip()}"
                 )
-            draft = gen(
-                f"drafter_{dim}", system_prompts["drafter"][dim], drafter_msg
-            )
-            drafter_outputs[dim] = draft
+            messages = [
+                {"role": "system", "content": system_prompts["drafter"][dim]},
+                {"role": "user", "content": drafter_msg},
+            ]
+            prompts.append(tok.apply_chat_template(
+                messages, tokenize=False, add_generation_prompt=True))
 
-            # --- Critic ---
+        drafts = batched_generate(f"drafter_{dim}", prompts)
+        for i in range(n):
+            drafter_outputs[dim][i] = drafts[i]
+
+        stage_times.append(time.time() - stage_t0)
+
+        # --- Critic ---
+        stage_t0 = time.time()
+        print(f"[GPU {gpu_id}] Stage: critic_{dim} ({n} samples) ...", flush=True)
+
+        prompts = []
+        for i, s in enumerate(samples):
             critic_msg = (
                 f"Review the following draft {dim.capitalize()} section against "
                 f"the source consultation dialogue.\n\n"
-                f"Source consultation dialogue:\n{sample['dialogue']}\n\n"
-                f"Draft {dim.capitalize()} section to review:\n{draft}"
+                f"Source consultation dialogue:\n{s['dialogue']}\n\n"
+                f"Draft {dim.capitalize()} section to review:\n{drafts[i]}"
             )
-            critique = gen(
-                f"critic_{dim}", system_prompts["critic"][dim], critic_msg
-            )
-            critic_outputs[dim] = critique
+            messages = [
+                {"role": "system", "content": system_prompts["critic"][dim]},
+                {"role": "user", "content": critic_msg},
+            ]
+            prompts.append(tok.apply_chat_template(
+                messages, tokenize=False, add_generation_prompt=True))
 
-            # --- Refiner ---
+        critiques = batched_generate(f"critic_{dim}", prompts)
+        for i in range(n):
+            critic_outputs[dim][i] = critiques[i]
+
+        stage_times.append(time.time() - stage_t0)
+
+        # --- Refiner ---
+        stage_t0 = time.time()
+        print(f"[GPU {gpu_id}] Stage: refiner_{dim} ({n} samples) ...", flush=True)
+
+        prompts = []
+        for i, s in enumerate(samples):
             refiner_msg = (
                 f"Produce the final revised {dim.capitalize()} section.\n\n"
-                f"Source consultation dialogue:\n{sample['dialogue']}\n\n"
-                f"Initial draft:\n{draft}\n\n"
-                f"Peer critique:\n{critique}"
+                f"Source consultation dialogue:\n{s['dialogue']}\n\n"
+                f"Initial draft:\n{drafts[i]}\n\n"
+                f"Peer critique:\n{critiques[i]}"
             )
-            final = gen(
-                f"refiner_{dim}", system_prompts["refiner"][dim], refiner_msg
-            )
-            refiner_outputs[dim] = final
+            messages = [
+                {"role": "system", "content": system_prompts["refiner"][dim]},
+                {"role": "user", "content": refiner_msg},
+            ]
+            prompts.append(tok.apply_chat_template(
+                messages, tokenize=False, add_generation_prompt=True))
 
-            # Accumulate context for next dimension's drafter
-            soap_so_far += f"{SECTION_LABELS[dim]}\n{final}\n\n"
+        refined = batched_generate(f"refiner_{dim}", prompts)
+        for i in range(n):
+            refiner_outputs[dim][i] = refined[i]
+            soap_so_far[i] += f"{SECTION_LABELS[dim]}\n{refined[i]}\n\n"
 
+        stage_times.append(time.time() - stage_t0)
+
+        # ETA after each dimension (3 stages)
+        avg_stage = sum(stage_times) / len(stage_times)
+        remaining = total_stages - len(stage_times)
+        eta_h = (avg_stage * remaining) / 3600
+        print(f"[GPU {gpu_id}] {dim} complete ({len(stage_times)}/{total_stages} stages) | "
+              f"ETA: {eta_h:.2f}h", flush=True)
+
+    # Enqueue results
+    for i, s in enumerate(samples):
         combined = (
-            f"**1. Subjective:**\n{refiner_outputs['subjective']}\n\n"
-            f"**2. Objective:**\n{refiner_outputs['objective']}\n\n"
-            f"**3. Assessment:**\n{refiner_outputs['assessment']}\n\n"
-            f"**4. Plan:**\n{refiner_outputs['plan']}"
+            f"**1. Subjective:**\n{refiner_outputs['subjective'][i]}\n\n"
+            f"**2. Objective:**\n{refiner_outputs['objective'][i]}\n\n"
+            f"**3. Assessment:**\n{refiner_outputs['assessment'][i]}\n\n"
+            f"**4. Plan:**\n{refiner_outputs['plan'][i]}"
         )
-
         result_queue.put({
-            "index": sample["_global_idx"],
-            "drafter_outputs": drafter_outputs,
-            "critic_outputs": critic_outputs,
-            "refiner_outputs": refiner_outputs,
+            "index": s["_global_idx"],
+            "drafter_outputs": {d: drafter_outputs[d][i] for d in DIMENSIONS},
+            "critic_outputs": {d: critic_outputs[d][i] for d in DIMENSIONS},
+            "refiner_outputs": {d: refiner_outputs[d][i] for d in DIMENSIONS},
             "combined_output": combined,
-            "ref_sections": sample["ref_sections"],
-            "ref_combined": sample["ref_combined"],
+            "ref_sections": s["ref_sections"],
+            "ref_combined": s["ref_combined"],
         })
 
-        # Track timing and estimate remaining
-        sample_elapsed = time.time() - sample_start
-        sample_times.append(sample_elapsed)
-
-        if len(sample_times) >= 3:
-            avg_time = sum(sample_times) / len(sample_times)
-            remaining = len(samples) - (idx + 1)
-            eta_hours = (avg_time * remaining) / 3600
-            print(
-                f"[GPU {gpu_id}] Sample took {sample_elapsed:.1f}s | "
-                f"Avg: {avg_time:.1f}s | "
-                f"ETA this GPU: {eta_hours:.2f}h ({remaining} samples left)",
-                flush=True,
-            )
-
-    total_time = sum(sample_times) if sample_times else 0
-    avg_time = sum(sample_times) / len(sample_times) if sample_times else 0
-    print(
-        f"[GPU {gpu_id}] Done - processed {len(samples)} samples in "
-        f"{total_time / 3600:.2f}h (avg {avg_time:.1f}s/sample)",
-        flush=True,
-    )
+    total_time = sum(stage_times)
+    print(f"[GPU {gpu_id}] Done — {n} samples in {total_time/3600:.2f}h "
+          f"({total_time/max(n,1):.1f}s/sample avg)", flush=True)
 
 
 # ---------------------------------------------------------------------------
@@ -384,10 +411,11 @@ def bertscore_worker(gpu_id: int, tasks: list[dict], model_dir: str,
 def main():
     mp.set_start_method("spawn", force=True)
     num_gpus = torch.cuda.device_count()
+    batch_size = args.batch_size
     print(f"\nUsing {num_gpus} GPU(s) for inference on {len(dataset)} samples ...")
-    print(f"Each GPU processes ~{len(dataset) // max(num_gpus, 1)} samples in parallel.")
-    print(f"DCR pipeline: 3 generations per dimension x 4 dimensions = 12 calls/sample")
-    print(f"ETA estimates will appear after the first few samples complete.\n")
+    print(f"Batch size per GPU: {batch_size}")
+    print(f"Each GPU processes ~{len(dataset) // max(num_gpus, 1)} samples.")
+    print(f"DCR pipeline: 12 stages (D→C→R × 4 dims), each stage batched.\n")
     inference_start_time = time.time()
 
     # Tag samples with global index
@@ -408,7 +436,7 @@ def main():
             p = mp.Process(
                 target=worker,
                 args=(gpu_id, shards[gpu_id], args.max_new_tokens,
-                      role_system_prompts, result_queue),
+                      batch_size, role_system_prompts, result_queue),
             )
             p.start()
             processes.append(p)
@@ -439,7 +467,7 @@ def main():
     else:
         # Single GPU fallback
         result_queue = mp.Queue()
-        worker(0, dataset, args.max_new_tokens, role_system_prompts, result_queue)
+        worker(0, dataset, args.max_new_tokens, batch_size, role_system_prompts, result_queue)
         results = []
         for _ in range(len(dataset)):
             results.append(result_queue.get())

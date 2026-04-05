@@ -11,6 +11,7 @@
 
 # Setting environment variables
 NUMBER_OF_SAMPLES=0   # set to 0 to run all samples. 2,006 samples available
+BATCH_SIZE=32         # samples per GPU per batch (reduce if OOM)
 PROJECT_ROOT="${SLURM_SUBMIT_DIR}"
 SCRIPT_DIR="${PROJECT_ROOT}/multi_agents_small"
 SIF="apptainer_runtime.sif"
@@ -31,6 +32,7 @@ apptainer exec --nv \
     --bind ${PROJECT_ROOT}:${PROJECT_ROOT} \
     ${SIF} \
     python ${SCRIPT} ${NUM_SAMPLES_ARG} \
+    --batch_size ${BATCH_SIZE} \
     --output ${BENCHMARK_OUTPUT_FOLDER}/hima_multi_small_benchmark_n${NUMBER_OF_SAMPLES}.json
 
 echo "Benchmark complete."

@@ -74,6 +74,7 @@ ADAPTER_DIR = os.path.join(SCRIPT_DIR, "finetuned_adapters", "final_adapter")
 
 os.environ["HF_HUB_OFFLINE"] = "1"
 os.environ["TRANSFORMERS_OFFLINE"] = "1"
+os.environ["WANDB_DISABLED"] = "true"
 
 
 def load_jsonl(path: str) -> list[dict]:
