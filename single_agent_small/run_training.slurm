@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=hima_single_finetune
+#SBATCH --job-name=hima_single_small_finetune
 #SBATCH --partition=gpu
 #SBATCH --gres=gpu:a100_40gb:3
 #SBATCH --ntasks=1

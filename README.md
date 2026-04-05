@@ -197,10 +197,10 @@ Evaluation on the held-out test set (2,006 samples):
 
 |  Metric   | Precision | Recall  |  F1   |
 |-----------|-----------|---------|-------|
-| ROUGE-1   |   0.664   |  0.355  | 0.461 |
-| ROUGE-2   |   0.328   |  0.176  | 0.228 |
-| ROUGE-L   |   0.470   |  0.251  | 0.326 |
-| BERTScore |   0.820   |  0.830  | 0.825 |
+| ROUGE-1   |   0.6638  |  0.3560 | 0.4611 |
+| ROUGE-2   |   0.3273  |  0.1755 | 0.2274 |
+| ROUGE-L   |   0.4686  |  0.2514 | 0.3256 |
+| BERTScore |   0.8198  |  0.8296 | 0.8246 |
 
 ### 8B Model (Ministral-3-8B-Reasoning-2512)
 
@@ -210,46 +210,46 @@ Benchmark evaluation on the held-out test set (2,006 samples). All scores are F1
 
 |  Metric   | Precision | Recall  |  F1   |
 |-----------|-----------|---------|-------|
-| ROUGE-1   |   0.781   |  0.772  | 0.774 |
-| ROUGE-2   |   0.544   |  0.547  | 0.548 |
-| ROUGE-L   |   0.632   |  0.624  | 0.626 |
-| BERTScore |   0.929   |  0.927  | 0.928 |
+| ROUGE-1   |           |         |       |
+| ROUGE-2   |           |         |       |
+| ROUGE-L   |           |         |       |
+| BERTScore |           |         |       |
 
 #### Multi-Agent (Combined)
 
 |  Metric   | Precision | Recall  |  F1   |
 |-----------|-----------|---------|-------|
-| ROUGE-1   |   0.781   |  0.739  | 0.756 |
-| ROUGE-2   |   0.544   |  0.514  | 0.526 |
-| ROUGE-L   |   0.615   |  0.582  | 0.596 |
-| BERTScore |   0.922   |  0.920  | 0.921 |
+| ROUGE-1   |           |         |       |
+| ROUGE-2   |           |         |       |
+| ROUGE-L   |           |         |       |
+| BERTScore |           |         |       |
 
 #### Multi-Agent (Per Agent)
 
 | Agent      | ROUGE-1 F1 | ROUGE-2 F1 | ROUGE-L F1 | BERTScore F1 |
 |------------|------------|------------|------------|--------------|
-| Subjective |    0.735   |   0.497    |   0.599    |    0.938     |
-| Objective  |    0.763   |   0.622    |   0.711    |    0.941     |
-| Assessment |    0.430   |   0.299    |   0.389    |    0.886     |
-| Plan       |    0.734   |   0.519    |   0.573    |    0.925     |
+| Subjective |            |            |            |              |
+| Objective  |            |            |            |              |
+| Assessment |            |            |            |              |
+| Plan       |            |            |            |              |
 
 #### Swarm-Agent (Combined - Refiner Output)
 
 |  Metric   | Precision | Recall  |  F1   |
 |-----------|-----------|---------|-------|
-| ROUGE-1   |   0.767   |  0.757  | 0.758 |
-| ROUGE-2   |   0.537   |  0.529  | 0.530 |
-| ROUGE-L   |   0.605   |  0.596  | 0.597 |
-| BERTScore |   0.922   |  0.920  | 0.921 |
+| ROUGE-1   |           |         |       |
+| ROUGE-2   |           |         |       |
+| ROUGE-L   |           |         |       |
+| BERTScore |           |         |       |
 
 #### Swarm-Agent (Per Dimension - Refiner Output)
 
 | Dimension  | ROUGE-1 F1 | ROUGE-2 F1 | ROUGE-L F1 | BERTScore F1 |
 |------------|------------|------------|------------|--------------|
-| Subjective |    0.731   |   0.492    |   0.593    |    0.937     |
-| Objective  |    0.777   |   0.639    |   0.730    |    0.944     |
-| Assessment |    0.469   |   0.331    |   0.423    |    0.891     |
-| Plan       |    0.729   |   0.522    |   0.578    |    0.926     |
+| Subjective |            |            |            |              |
+| Objective  |            |            |            |              |
+| Assessment |            |            |            |              |
+| Plan       |            |            |            |              |
 
 #### Swarm-Agent Ablation (Drafter-Only vs. Refiner)
 
@@ -257,14 +257,14 @@ Comparing Drafter output (before critique-refine) against the final Refiner outp
 
 | Dimension  | Stage   | ROUGE-1 F1 | ROUGE-2 F1 | ROUGE-L F1 | BERTScore F1 |
 |------------|---------|------------|------------|------------|--------------|
-| Subjective | Drafter |    0.743   |   0.507    |   0.609    |    0.939     |
-| Subjective | Refiner |    0.731   |   0.492    |   0.593    |    0.937     |
-| Objective  | Drafter |    0.772   |   0.631    |   0.720    |    0.941     |
-| Objective  | Refiner |    0.777   |   0.639    |   0.730    |    0.944     |
-| Assessment | Drafter |    0.459   |   0.321    |   0.419    |    0.890     |
-| Assessment | Refiner |    0.469   |   0.331    |   0.423    |    0.891     |
-| Plan       | Drafter |    0.723   |   0.508    |   0.559    |    0.924     |
-| Plan       | Refiner |    0.729   |   0.522    |   0.578    |    0.926     |
+| Subjective | Drafter |            |            |            |              |
+| Subjective | Refiner |            |            |            |              |
+| Objective  | Drafter |            |            |            |              |
+| Objective  | Refiner |            |            |            |              |
+| Assessment | Drafter |            |            |            |              |
+| Assessment | Refiner |            |            |            |              |
+| Plan       | Drafter |            |            |            |              |
+| Plan       | Refiner |            |            |            |              |
 
 ### 3B Model (Ministral-3-3B-Reasoning-2512)
 
@@ -274,46 +274,46 @@ The 3B study uses the same data, hyperparameters, and evaluation pipeline as the
 
 |  Metric   | Precision | Recall  |  F1   |
 |-----------|-----------|---------|-------|
-| ROUGE-1   |   0.787   |  0.768  | 0.774 |
-| ROUGE-2   |   0.557   |  0.544  | 0.549 |
-| ROUGE-L   |   0.632   |  0.617  | 0.622 |
-| BERTScore |   0.929   |  0.928  | 0.928 |
+| ROUGE-1   |           |         |       |
+| ROUGE-2   |           |         |       |
+| ROUGE-L   |           |         |       |
+| BERTScore |           |         |       |
 
 #### Multi-Agent (3B, Combined)
 
 |  Metric   | Precision | Recall  |  F1   |
 |-----------|-----------|---------|-------|
-| ROUGE-1   |   0.772   |  0.747  | 0.756 |
-| ROUGE-2   |   0.536   |  0.519  | 0.525 |
-| ROUGE-L   |   0.606   |  0.587  | 0.593 |
-| BERTScore |   0.922   |  0.920  | 0.921 |
+| ROUGE-1   |           |         |       |
+| ROUGE-2   |           |         |       |
+| ROUGE-L   |           |         |       |
+| BERTScore |           |         |       |
 
 #### Multi-Agent (3B, Per Agent)
 
 | Agent      | ROUGE-1 F1 | ROUGE-2 F1 | ROUGE-L F1 | BERTScore F1 |
 |------------|------------|------------|------------|--------------|
-| Subjective |    0.738   |   0.501    |   0.602    |    0.938     |
-| Objective  |    0.774   |   0.633    |   0.721    |    0.943     |
-| Assessment |    0.450   |   0.307    |   0.407    |    0.887     |
-| Plan       |    0.724   |   0.508    |   0.561    |    0.924     |
+| Subjective |            |            |            |              |
+| Objective  |            |            |            |              |
+| Assessment |            |            |            |              |
+| Plan       |            |            |            |              |
 
 #### Swarm-Agent (3B, Combined - Refiner Output)
 
 |  Metric   | Precision | Recall  |  F1   |
 |-----------|-----------|---------|-------|
-| ROUGE-1   |   0.773   |  0.740  | 0.752 |
-| ROUGE-2   |   0.539   |  0.516  | 0.524 |
-| ROUGE-L   |   0.608   |  0.583  | 0.592 |
-| BERTScore |   0.921   |  0.919  | 0.920 |
+| ROUGE-1   |           |         |       |
+| ROUGE-2   |           |         |       |
+| ROUGE-L   |           |         |       |
+| BERTScore |           |         |       |
 
 #### Swarm-Agent (3B, Per Dimension - Refiner Output)
 
 | Dimension  | ROUGE-1 F1 | ROUGE-2 F1 | ROUGE-L F1 | BERTScore F1 |
 |------------|------------|------------|------------|--------------|
-| Subjective |    0.724   |   0.484    |   0.584    |    0.935     |
-| Objective  |    0.769   |   0.629    |   0.721    |    0.943     |
-| Assessment |    0.449   |   0.313    |   0.406    |    0.887     |
-| Plan       |    0.728   |   0.522    |   0.578    |    0.926     |
+| Subjective |            |            |            |              |
+| Objective  |            |            |            |              |
+| Assessment |            |            |            |              |
+| Plan       |            |            |            |              |
 
 #### Swarm-Agent (3B) Ablation (Drafter-Only vs. Refiner)
 
@@ -321,14 +321,14 @@ Comparing Drafter output (before critique-refine) against the final Refiner outp
 
 | Dimension  | Stage   | ROUGE-1 F1 | ROUGE-2 F1 | ROUGE-L F1 | BERTScore F1 |
 |------------|---------|------------|------------|------------|--------------|
-| Subjective | Drafter |    0.737   |   0.500    |   0.601    |    0.938     |
-| Subjective | Refiner |    0.724   |   0.484    |   0.584    |    0.935     |
-| Objective  | Drafter |    0.771   |   0.627    |   0.713    |    0.942     |
-| Objective  | Refiner |    0.769   |   0.629    |   0.721    |    0.943     |
-| Assessment | Drafter |    0.447   |   0.306    |   0.406    |    0.887     |
-| Assessment | Refiner |    0.449   |   0.313    |   0.406    |    0.887     |
-| Plan       | Drafter |    0.712   |   0.497    |   0.548    |    0.922     |
-| Plan       | Refiner |    0.728   |   0.522    |   0.578    |    0.926     |
+| Subjective | Drafter |            |            |            |              |
+| Subjective | Refiner |            |            |            |              |
+| Objective  | Drafter |            |            |            |              |
+| Objective  | Refiner |            |            |            |              |
+| Assessment | Drafter |            |            |            |              |
+| Assessment | Refiner |            |            |            |              |
+| Plan       | Drafter |            |            |            |              |
+| Plan       | Refiner |            |            |            |              |
 
 ## Reproduction
 

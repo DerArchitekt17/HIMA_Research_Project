@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=hima_swarm_finetune
+#SBATCH --job-name=hima_swarm_small_finetune
 #SBATCH --partition=gpu
 #SBATCH --gres=gpu:a100_40gb:3
 #SBATCH --ntasks=1
@@ -38,7 +38,7 @@ for ROLE in drafter critic refiner; do
         CURRENT=$((CURRENT + 1))
 
         export WANDB_PROJECT="hima_swarm_small_finetune"
-        export WANDB_NAME="${ROLE}_${AGENT}"
+        export WANDB_NAME="${AGENT}_${ROLE}"
 
         echo "========== [${CURRENT}/${TOTAL}] ${ROLE}/${AGENT} on ${NUM_GPUS} GPU(s) =========="
 

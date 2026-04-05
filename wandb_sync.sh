@@ -2,12 +2,16 @@
 set -u  # don't use -e; we want to continue even if wandb sync fails sometimes
 
 # Usage:
-#   Loop mode (background):  nohup ./wandb_sync.sh > wandb_sync.log 2>&1 &
-#   One-shot mode (cron):    ./wandb_sync.sh --once
+#   Loop mode (background):  nohup ./wandb_sync_fast.sh > wandb_sync.log 2>&1 &
+#   One-shot mode (cron):    ./wandb_sync_fast.sh --once
 #
 # Cron setup (every 5 minutes):
 #   crontab -e
-#   */5 * * * * cd /work/hanken/HIMA_Research_Project && ./wandb_sync.sh --once >> wandb_sync.log 2>&1
+#   */5 * * * * cd /work/hanken/HIMA_Research_Project && ./wandb_sync_fast.sh --once >> wandb_sync.log 2>&1
+#
+# Difference from wandb_sync.sh:
+#   Skips runs that already have a .synced marker file, so the work per cycle
+#   stays proportional to *new* runs only — not the total accumulated history.
 
 ENV_NAME="hima_research"
 INTERVAL=30
@@ -47,12 +51,17 @@ sync_all () {
     shopt -s nullglob
     local runs=( ${exp}/wandb/offline-run-* )
     shopt -u nullglob
-    if [[ ${#runs[@]} -gt 0 ]]; then
-      echo "[$(date)] [${exp}] Found ${#runs[@]} offline run(s). Syncing..."
-      wandb sync --include-offline ${exp}/wandb/offline-run-* \
-        || echo "[$(date)] [${exp}] wandb sync returned non-zero; continuing."
-      synced=$((synced + ${#runs[@]}))
-    fi
+
+    for run_dir in "${runs[@]}"; do
+      # Skip runs already marked as synced by wandb
+      if [[ -f "${run_dir}/.synced" ]]; then
+        continue
+      fi
+      echo "[$(date)] [${exp}] Syncing: $(basename "$run_dir")"
+      wandb sync --include-offline "$run_dir" \
+        || echo "[$(date)] [${exp}] wandb sync returned non-zero for $(basename "$run_dir"); continuing."
+      synced=$((synced + 1))
+    done
   done
   echo "$synced"
 }

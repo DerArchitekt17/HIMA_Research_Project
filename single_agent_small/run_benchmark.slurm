@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=hima_single_benchmark
+#SBATCH --job-name=hima_single_small_benchmark
 #SBATCH --partition=gpu
 #SBATCH --gres=gpu:a100_40gb:3
 #SBATCH --ntasks=1
