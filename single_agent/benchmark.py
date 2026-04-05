@@ -52,6 +52,8 @@ parser.add_argument("--output", type=str, default="benchmark_results/hima_single
                     help="Path to save results JSON")
 parser.add_argument("--max_new_tokens", type=int, default=2048,
                     help="Max new tokens for generation")
+parser.add_argument("--batch_size", type=int, default=16,
+                    help="Batch size per GPU for generation (reduce if OOM)")
 args = parser.parse_args()
 
 # Set paths and environment variables
@@ -98,8 +100,8 @@ if args.num_samples > 0:
 
 # Worker function
 def worker(gpu_id: int, samples: list[dict], max_new_tokens: int,
-           result_queue: mp.Queue):
-    """Load model on gpu_id, process assigned samples, put results in queue."""
+           batch_size: int, result_queue: mp.Queue):
+    """Load model on gpu_id, process assigned samples in batches."""
     device = f"cuda:{gpu_id}"
     print(f"[GPU {gpu_id}] Loading base model ...", flush=True)
 
@@ -115,6 +117,7 @@ def worker(gpu_id: int, samples: list[dict], max_new_tokens: int,
     )
     if tok.pad_token is None:
         tok.pad_token = tok.eos_token
+    tok.padding_side = "left"  # Required for batched decoder generation
 
     model = AutoModelForCausalLM.from_pretrained(
         MODEL_DIR,
@@ -130,16 +133,30 @@ def worker(gpu_id: int, samples: list[dict], max_new_tokens: int,
     model = PeftModel.from_pretrained(model, ADAPTER_DIR)
     model.eval()
 
-    def generate(system_prompt, user_message):
-        messages = [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_message},
-        ]
-        prompt = tok.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
-        inputs = tok(prompt, return_tensors="pt").to(device)
-        n_in = inputs["input_ids"].shape[1]
+    # Process in batches
+    num_batches = (len(samples) + batch_size - 1) // batch_size
+    samples_done = 0
+    batch_times = []
 
-        t0 = time.time()
+    for batch_idx in range(num_batches):
+        batch = samples[batch_idx * batch_size : (batch_idx + 1) * batch_size]
+        batch_t0 = time.time()
+
+        # Build prompts for entire batch
+        prompts = []
+        for s in batch:
+            messages = [
+                {"role": "system", "content": s["system_prompt"]},
+                {"role": "user", "content": s["user_message"]},
+            ]
+            prompts.append(tok.apply_chat_template(
+                messages, tokenize=False, add_generation_prompt=True))
+
+        # Tokenize with left-padding so all inputs are right-aligned
+        inputs = tok(prompts, return_tensors="pt", padding=True).to(device)
+        padded_len = inputs["input_ids"].shape[1]
+
+        # Generate entire batch at once
         with torch.no_grad():
             outputs = model.generate(
                 **inputs,
@@ -147,45 +164,38 @@ def worker(gpu_id: int, samples: list[dict], max_new_tokens: int,
                 do_sample=False,
                 eos_token_id=tok.eos_token_id,
             )
-        n_out = outputs[0].shape[0] - n_in
-        elapsed = time.time() - t0
-        print(f"    [GPU {gpu_id}] {n_in}→{n_out} tokens "
-              f"({n_out/max(elapsed,0.01):.1f} tok/s)", flush=True)
-        return tok.decode(outputs[0][n_in:], skip_special_tokens=True)
 
-    # Process assigned samples
-    sample_times = []
-    for idx, sample in enumerate(samples):
-        sample_start = time.time()
-        print(f"[GPU {gpu_id}] Sample {sample['_global_idx']+1}/{sample['_total']} ...",
+        batch_elapsed = time.time() - batch_t0
+        total_new_tokens = sum(
+            outputs[i].shape[0] - padded_len for i in range(len(batch)))
+
+        print(f"[GPU {gpu_id}] Batch {batch_idx+1}/{num_batches}: "
+              f"{len(batch)} samples, {total_new_tokens} new tokens in {batch_elapsed:.1f}s "
+              f"({total_new_tokens/max(batch_elapsed,0.01):.0f} tok/s aggregate)",
               flush=True)
 
-        output = generate(sample["system_prompt"], sample["user_message"])
+        # Decode each sequence and enqueue results
+        for i, s in enumerate(batch):
+            text = tok.decode(outputs[i][padded_len:], skip_special_tokens=True)
+            result_queue.put({
+                "index": s["_global_idx"],
+                "output": text,
+                "reference": s["reference"],
+            })
 
-        result_queue.put({
-            "index": sample["_global_idx"],
-            "output": output,
-            "reference": sample["reference"],
-        })
+        # ETA tracking
+        samples_done += len(batch)
+        batch_times.append(batch_elapsed)
+        if len(batch_times) >= 2:
+            avg_batch_time = sum(batch_times) / len(batch_times)
+            remaining_batches = num_batches - (batch_idx + 1)
+            eta_h = (avg_batch_time * remaining_batches) / 3600
+            print(f"[GPU {gpu_id}] {samples_done}/{len(samples)} samples done | "
+                  f"ETA this GPU: {eta_h:.2f}h", flush=True)
 
-        # Track timing and estimate remaining
-        sample_elapsed = time.time() - sample_start
-        sample_times.append(sample_elapsed)
-
-        # After 3 samples, start showing estimates
-        if len(sample_times) >= 3:
-            avg_time = sum(sample_times) / len(sample_times)
-            remaining_samples = len(samples) - (idx + 1)
-            eta_seconds = avg_time * remaining_samples
-            eta_hours = eta_seconds / 3600
-            print(f"[GPU {gpu_id}] Sample took {sample_elapsed:.1f}s | "
-                  f"Avg: {avg_time:.1f}s | "
-                  f"ETA this GPU: {eta_hours:.2f}h ({remaining_samples} samples left)", flush=True)
-
-    total_time = sum(sample_times) if sample_times else 0
-    avg_time = sum(sample_times) / len(sample_times) if sample_times else 0
-    print(f"[GPU {gpu_id}] Done — processed {len(samples)} samples in {total_time/3600:.2f}h "
-          f"(avg {avg_time:.1f}s/sample)", flush=True)
+    total_time = sum(batch_times)
+    print(f"[GPU {gpu_id}] Done — {len(samples)} samples in {total_time/3600:.2f}h "
+          f"({total_time/max(len(samples),1):.1f}s/sample avg)", flush=True)
 
 
 def bertscore_worker(gpu_id: int, tasks: list[dict], model_dir: str,
@@ -217,9 +227,11 @@ def main():
     mp.set_start_method("spawn", force=True)
     # Enabling multi GPU processing
     num_gpus = torch.cuda.device_count()
+    batch_size = args.batch_size
     print(f"\nUsing {num_gpus} GPU(s) for inference on {len(dataset)} samples ...")
-    print(f"Each GPU processes ~{len(dataset)//max(num_gpus,1)} samples in parallel.")
-    print(f"ETA estimates will appear after the first few samples complete.\n")
+    print(f"Batch size per GPU: {batch_size}")
+    print(f"Each GPU processes ~{len(dataset)//max(num_gpus,1)} samples.")
+    print(f"ETA estimates will appear after the first few batches complete.\n")
     inference_start_time = time.time()
 
     # Tag samples with global index
@@ -237,7 +249,8 @@ def main():
         processes = []
         for gpu_id in range(num_gpus):
             p = mp.Process(target=worker,
-                           args=(gpu_id, shards[gpu_id], args.max_new_tokens, result_queue))
+                           args=(gpu_id, shards[gpu_id], args.max_new_tokens,
+                                 batch_size, result_queue))
             p.start()
             processes.append(p)
 
@@ -265,7 +278,7 @@ def main():
     else:
         # Single GPU fallback!
         result_queue = mp.Queue()
-        worker(0, dataset, args.max_new_tokens, result_queue)
+        worker(0, dataset, args.max_new_tokens, batch_size, result_queue)
         results = []
         for _ in range(len(dataset)):
             results.append(result_queue.get())
