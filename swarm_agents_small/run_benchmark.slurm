@@ -11,7 +11,7 @@
 
 # Setting environment variables
 NUMBER_OF_SAMPLES=0   # set to 0 to run all samples. 2,006 samples available
-BATCH_SIZE=32         # samples per GPU per batch (reduce if OOM)
+BATCH_SIZE=16         # samples per GPU per batch (reduce if OOM; swarm prompts grow with soap_so_far)
 PROJECT_ROOT="${SLURM_SUBMIT_DIR}"
 SCRIPT_DIR="${PROJECT_ROOT}/swarm_agents_small"
 SIF="apptainer_runtime.sif"
@@ -30,6 +30,8 @@ NUM_SAMPLES_ARG=""
 if [ ${NUMBER_OF_SAMPLES} -ge 1 ]; then
     NUM_SAMPLES_ARG="--num_samples ${NUMBER_OF_SAMPLES}"
 fi
+
+export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 
 # Run benchmark
 apptainer exec --nv \

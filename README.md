@@ -210,10 +210,10 @@ Benchmark evaluation on the held-out test set (2,006 samples). All scores are F1
 
 |  Metric   | Precision | Recall  |  F1   |
 |-----------|-----------|---------|-------|
-| ROUGE-1   |           |         |       |
-| ROUGE-2   |           |         |       |
-| ROUGE-L   |           |         |       |
-| BERTScore |           |         |       |
+| ROUGE-1   |   0.7878  |  0.7748 | 0.7783 |
+| ROUGE-2   |   0.5607  |  0.5515 | 0.5540 |
+| ROUGE-L   |   0.6354  |  0.6249 | 0.6278 |
+| BERTScore |   0.9303  |  0.9289 | 0.9296 |
 
 #### Multi-Agent (Combined)
 
@@ -274,10 +274,10 @@ The 3B study uses the same data, hyperparameters, and evaluation pipeline as the
 
 |  Metric   | Precision | Recall  |  F1   |
 |-----------|-----------|---------|-------|
-| ROUGE-1   |           |         |       |
-| ROUGE-2   |           |         |       |
-| ROUGE-L   |           |         |       |
-| BERTScore |           |         |       |
+| ROUGE-1   |   0.7803  |  0.7675 | 0.7707 |
+| ROUGE-2   |   0.5495  |  0.5403 | 0.5427 |
+| ROUGE-L   |   0.6231  |  0.6127 | 0.6154 |
+| BERTScore |   0.9287  |  0.9269 | 0.9278 |
 
 #### Multi-Agent (3B, Combined)
 
