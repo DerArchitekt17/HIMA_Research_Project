@@ -31,8 +31,11 @@ if [ ${NUMBER_OF_SAMPLES} -ge 1 ]; then
     NUM_SAMPLES_ARG="--num_samples ${NUMBER_OF_SAMPLES}"
 fi
 
-# Run benchmark (auto-detects all available GPUs via torch.cuda.device_count)
-python ${SCRIPT} ${NUM_SAMPLES_ARG} \
+# Run benchmark
+apptainer exec --nv \
+    --bind ${PROJECT_ROOT}:${PROJECT_ROOT} \
+    ${SIF} \
+    python ${SCRIPT} ${NUM_SAMPLES_ARG} \
     --batch_size ${BATCH_SIZE} \
     --output ${BENCHMARK_OUTPUT_FOLDER}/hima_swarm_small_benchmark_n${NUMBER_OF_SAMPLES}.json
 
