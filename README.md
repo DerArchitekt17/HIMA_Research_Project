@@ -219,52 +219,61 @@ Benchmark evaluation on the held-out test set (2,006 samples). All scores are F1
 
 |  Metric   | Precision | Recall  |  F1   |
 |-----------|-----------|---------|-------|
-| ROUGE-1   |           |         |       |
-| ROUGE-2   |           |         |       |
-| ROUGE-L   |           |         |       |
-| BERTScore |           |         |       |
+| ROUGE-1   |   0.7814  |  0.7474 | 0.7604 |
+| ROUGE-2   |   0.5446  |  0.5204 | 0.5298 |
+| ROUGE-L   |   0.6145  |  0.5873 | 0.5979 |
+| BERTScore |   0.9230  |  0.9210 | 0.9220 |
 
 #### Multi-Agent (Per Agent)
 
 | Agent      | ROUGE-1 F1 | ROUGE-2 F1 | ROUGE-L F1 | BERTScore F1 |
 |------------|------------|------------|------------|--------------|
-| Subjective |            |            |            |              |
-| Objective  |            |            |            |              |
-| Assessment |            |            |            |              |
-| Plan       |            |            |            |              |
+| Subjective |   0.7402   |   0.5073   |   0.6042   |    0.9399    |
+| Objective  |   0.7754   |   0.6351   |   0.7219   |    0.9428    |
+| Assessment |   0.4600   |   0.3224   |   0.4195   |    0.8897    |
+| Plan       |   0.7312   |   0.5160   |   0.5720   |    0.9258    |
 
 #### Swarm-Agent (Combined - Refiner Output)
 
 |  Metric   | Precision | Recall  |  F1   |
 |-----------|-----------|---------|-------|
-| ROUGE-1   |           |         |       |
-| ROUGE-2   |           |         |       |
-| ROUGE-L   |           |         |       |
-| BERTScore |           |         |       |
+| ROUGE-1   |   0.7682  |  0.7487 | 0.7544 |
+| ROUGE-2   |   0.5358  |  0.5219 | 0.5261 |
+| ROUGE-L   |   0.6047  |  0.5890 | 0.5937 |
+| BERTScore |   0.9213  |  0.9196 | 0.9205 |
 
 #### Swarm-Agent (Per Dimension - Refiner Output)
 
 | Dimension  | ROUGE-1 F1 | ROUGE-2 F1 | ROUGE-L F1 | BERTScore F1 |
 |------------|------------|------------|------------|--------------|
-| Subjective |            |            |            |              |
-| Objective  |            |            |            |              |
-| Assessment |            |            |            |              |
-| Plan       |            |            |            |              |
+| Subjective |   0.7222   |   0.4865   |   0.5846   |    0.9363    |
+| Objective  |   0.7787   |   0.6398   |   0.7304   |    0.9452    |
+| Assessment |   0.4635   |   0.3258   |   0.4195   |    0.8897    |
+| Plan       |   0.7309   |   0.5237   |   0.5794   |    0.9275    |
 
 #### Swarm-Agent Ablation (Drafter-Only vs. Refiner)
 
-Comparing Drafter output (before critique-refine) against the final Refiner output to quantify the contribution of the DCR loop:
+Comparing Drafter output (before critique-refine) against the final Refiner output to quantify the contribution of the DCR loop. A positive delta means the Critic→Refine stages improved the draft; a negative delta means the Drafter alone scored higher, indicating the refinement step did not help for that dimension.
 
 | Dimension  | Stage   | ROUGE-1 F1 | ROUGE-2 F1 | ROUGE-L F1 | BERTScore F1 |
 |------------|---------|------------|------------|------------|--------------|
-| Subjective | Drafter |            |            |            |              |
-| Subjective | Refiner |            |            |            |              |
-| Objective  | Drafter |            |            |            |              |
-| Objective  | Refiner |            |            |            |              |
-| Assessment | Drafter |            |            |            |              |
-| Assessment | Refiner |            |            |            |              |
-| Plan       | Drafter |            |            |            |              |
-| Plan       | Refiner |            |            |            |              |
+| Subjective | Drafter |   0.7389   |   0.5053   |   0.6016   |    0.9396    |
+| Subjective | Refiner |   0.7222   |   0.4865   |   0.5846   |    0.9363    |
+| Objective  | Drafter |   0.7686   |   0.6272   |   0.7149   |    0.9413    |
+| Objective  | Refiner |   0.7787   |   0.6398   |   0.7304   |    0.9452    |
+| Assessment | Drafter |   0.4416   |   0.3035   |   0.4002   |    0.8868    |
+| Assessment | Refiner |   0.4635   |   0.3258   |   0.4195   |    0.8897    |
+| Plan       | Drafter |   0.7225   |   0.5089   |   0.5627   |    0.9238    |
+| Plan       | Refiner |   0.7309   |   0.5237   |   0.5794   |    0.9275    |
+
+Delta (Refiner − Drafter):
+
+| Dimension  | ROUGE-1 F1 | ROUGE-2 F1 | ROUGE-L F1 | BERTScore F1 |
+|------------|------------|------------|------------|--------------|
+| Subjective |  **-0.0167** | **-0.0188** | **-0.0170** |  **-0.0033** |
+| Objective  |  +0.0101   |  +0.0126   |  +0.0155   |   +0.0039    |
+| Assessment |  +0.0219   |  +0.0223   |  +0.0193   |   +0.0029    |
+| Plan       |  +0.0084   |  +0.0148   |  +0.0167   |   +0.0037    |
 
 ### 3B Model (Ministral-3-3B-Reasoning-2512)
 
@@ -283,52 +292,61 @@ The 3B study uses the same data, hyperparameters, and evaluation pipeline as the
 
 |  Metric   | Precision | Recall  |  F1   |
 |-----------|-----------|---------|-------|
-| ROUGE-1   |           |         |       |
-| ROUGE-2   |           |         |       |
-| ROUGE-L   |           |         |       |
-| BERTScore |           |         |       |
+| ROUGE-1   |   0.7687  |  0.7448 | 0.7533 |
+| ROUGE-2   |   0.5298  |  0.5133 | 0.5192 |
+| ROUGE-L   |   0.5982  |  0.5797 | 0.5863 |
+| BERTScore |   0.9219  |  0.9196 | 0.9208 |
 
 #### Multi-Agent (3B, Per Agent)
 
 | Agent      | ROUGE-1 F1 | ROUGE-2 F1 | ROUGE-L F1 | BERTScore F1 |
 |------------|------------|------------|------------|--------------|
-| Subjective |            |            |            |              |
-| Objective  |            |            |            |              |
-| Assessment |            |            |            |              |
-| Plan       |            |            |            |              |
+| Subjective |   0.7312   |   0.4955   |   0.5938   |    0.9381    |
+| Objective  |   0.7703   |   0.6291   |   0.7162   |    0.9437    |
+| Assessment |   0.4452   |   0.3023   |   0.4021   |    0.8868    |
+| Plan       |   0.7199   |   0.5005   |   0.5522   |    0.9239    |
 
 #### Swarm-Agent (3B, Combined - Refiner Output)
 
 |  Metric   | Precision | Recall  |  F1   |
 |-----------|-----------|---------|-------|
-| ROUGE-1   |           |         |       |
-| ROUGE-2   |           |         |       |
-| ROUGE-L   |           |         |       |
-| BERTScore |           |         |       |
+| ROUGE-1   |   0.7772  |  0.7363 | 0.7523 |
+| ROUGE-2   |   0.5394  |  0.5106 | 0.5219 |
+| ROUGE-L   |   0.6103  |  0.5780 | 0.5907 |
+| BERTScore |   0.9212  |  0.9192 | 0.9202 |
 
 #### Swarm-Agent (3B, Per Dimension - Refiner Output)
 
 | Dimension  | ROUGE-1 F1 | ROUGE-2 F1 | ROUGE-L F1 | BERTScore F1 |
 |------------|------------|------------|------------|--------------|
-| Subjective |            |            |            |              |
-| Objective  |            |            |            |              |
-| Assessment |            |            |            |              |
-| Plan       |            |            |            |              |
+| Subjective |   0.7200   |   0.4808   |   0.5785   |    0.9357    |
+| Objective  |   0.7713   |   0.6311   |   0.7228   |    0.9441    |
+| Assessment |   0.4455   |   0.3061   |   0.4010   |    0.8881    |
+| Plan       |   0.7299   |   0.5224   |   0.5802   |    0.9276    |
 
 #### Swarm-Agent (3B) Ablation (Drafter-Only vs. Refiner)
 
-Comparing Drafter output (before critique-refine) against the final Refiner output to quantify the contribution of the DCR loop:
+Comparing Drafter output (before critique-refine) against the final Refiner output to quantify the contribution of the DCR loop. A positive delta means the Critic→Refine stages improved the draft; a negative delta means the Drafter alone scored higher, indicating the refinement step did not help for that dimension.
 
 | Dimension  | Stage   | ROUGE-1 F1 | ROUGE-2 F1 | ROUGE-L F1 | BERTScore F1 |
 |------------|---------|------------|------------|------------|--------------|
-| Subjective | Drafter |            |            |            |              |
-| Subjective | Refiner |            |            |            |              |
-| Objective  | Drafter |            |            |            |              |
-| Objective  | Refiner |            |            |            |              |
-| Assessment | Drafter |            |            |            |              |
-| Assessment | Refiner |            |            |            |              |
-| Plan       | Drafter |            |            |            |              |
-| Plan       | Refiner |            |            |            |              |
+| Subjective | Drafter |   0.7295   |   0.4935   |   0.5926   |    0.9378    |
+| Subjective | Refiner |   0.7200   |   0.4808   |   0.5785   |    0.9357    |
+| Objective  | Drafter |   0.7674   |   0.6247   |   0.7108   |    0.9429    |
+| Objective  | Refiner |   0.7713   |   0.6311   |   0.7228   |    0.9441    |
+| Assessment | Drafter |   0.4474   |   0.3038   |   0.4057   |    0.8870    |
+| Assessment | Refiner |   0.4455   |   0.3061   |   0.4010   |    0.8881    |
+| Plan       | Drafter |   0.7194   |   0.5021   |   0.5550   |    0.9235    |
+| Plan       | Refiner |   0.7299   |   0.5224   |   0.5802   |    0.9276    |
+
+Delta (Refiner − Drafter):
+
+| Dimension  | ROUGE-1 F1 | ROUGE-2 F1 | ROUGE-L F1 | BERTScore F1 |
+|------------|------------|------------|------------|--------------|
+| Subjective | **-0.0095** | **-0.0127** | **-0.0141** |  **-0.0021** |
+| Objective  |  +0.0039   |  +0.0064   |  +0.0120   |   +0.0012    |
+| Assessment | **-0.0019** |  +0.0023   | **-0.0047** |   +0.0011    |
+| Plan       |  +0.0105   |  +0.0203   |  +0.0252   |   +0.0041    |
 
 ## Reproduction
 
